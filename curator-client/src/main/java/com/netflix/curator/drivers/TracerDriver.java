@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright 2013 Netflix, Inc.
+ *  Copyright 2011 Netflix, Inc.
  *
  *     Licensed under the Apache License, Version 2.0 (the "License");
  *     you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public interface TracerDriver
      *
      * @param name of the event
      * @param time time event took
-     * @param unit timeunit
+     * @param unit time unit
      */
     public void     addTrace(String name, long time, TimeUnit unit);
 
