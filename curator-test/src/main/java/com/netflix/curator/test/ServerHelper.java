@@ -18,146 +18,123 @@
 
 package com.netflix.curator.test;
 
-import org.apache.zookeeper.server.ZooKeeperServer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 
-class ServerHelper
-{
-    private static class ServerCnxnFactoryMethods
-    {
-        private final Constructor constructor;
-        private final Method configureMethod;
-        private final Method startupMethod;
-        private final Method shutdownMethod;
+import org.apache.zookeeper.server.ZooKeeperServer;
 
-        private ServerCnxnFactoryMethods(Constructor constructor, Method configureMethod, Method startupMethod, Method shutdownMethod)
-        {
-            this.constructor = constructor;
-            this.configureMethod = configureMethod;
-            this.startupMethod = startupMethod;
-            this.shutdownMethod = shutdownMethod;
-        }
-    }
+class ServerHelper {
+	private static class ServerCnxnFactoryMethods {
+		private final Constructor<?> constructor;
+		private final Method configureMethod;
+		private final Method startupMethod;
+		private final Method shutdownMethod;
 
-    private static class NioServerCnxnMethods
-    {
-        private final Constructor constructor;
-        private final Method startupMethod;
-        private final Method shutdownMethod;
+		private ServerCnxnFactoryMethods(Constructor<?> constructor,
+				Method configureMethod, Method startupMethod,
+				Method shutdownMethod) {
+			this.constructor = constructor;
+			this.configureMethod = configureMethod;
+			this.startupMethod = startupMethod;
+			this.shutdownMethod = shutdownMethod;
+		}
+	}
 
-        private NioServerCnxnMethods(Constructor constructor, Method startupMethod, Method shutdownMethod)
-        {
-            this.constructor = constructor;
-            this.startupMethod = startupMethod;
-            this.shutdownMethod = shutdownMethod;
-        }
-    }
+	private static class NioServerCnxnMethods {
+		private final Constructor<?> constructor;
+		private final Method startupMethod;
+		private final Method shutdownMethod;
 
-    private static final ServerCnxnFactoryMethods       serverCnxnFactoryMethods;
-    private static final NioServerCnxnMethods nioServerCnxn;
+		private NioServerCnxnMethods(Constructor<?> constructor,
+				Method startupMethod, Method shutdownMethod) {
+			this.constructor = constructor;
+			this.startupMethod = startupMethod;
+			this.shutdownMethod = shutdownMethod;
+		}
+	}
 
-    static
-    {
-        Class       serverCnxnFactoryClass = null;
-        Class       nioServerCnxnFactoryClass = null;
-        try
-        {
-            serverCnxnFactoryClass = Class.forName("org.apache.zookeeper.server.NIOServerCnxnFactory");
-        }
-        catch ( ClassNotFoundException ignore )
-        {
-            // ignore
-        }
+	private static final ServerCnxnFactoryMethods serverCnxnFactoryMethods;
+	private static final NioServerCnxnMethods nioServerCnxn;
 
-        try
-        {
-            nioServerCnxnFactoryClass = Class.forName("org.apache.zookeeper.server.NIOServerCnxn$Factory");
-        }
-        catch ( ClassNotFoundException ignore )
-        {
-            // ignore
-        }
+	static {
+		Class<?> serverCnxnFactoryClass = null;
+		Class<?> nioServerCnxnFactoryClass = null;
+		try {
+			serverCnxnFactoryClass = Class
+					.forName("org.apache.zookeeper.server.NIOServerCnxnFactory");
+		} catch (ClassNotFoundException ignore) {
+			// ignore
+		}
 
-        ServerCnxnFactoryMethods        localServerCnxnFactoryMethods = null;
-        NioServerCnxnMethods localNioServerCnxn = null;
-        try
-        {
-            if ( serverCnxnFactoryClass != null )
-            {
-                localServerCnxnFactoryMethods = new ServerCnxnFactoryMethods
-                (
-                    serverCnxnFactoryClass.getConstructor(),
-                    serverCnxnFactoryClass.getDeclaredMethod("configure", InetSocketAddress.class, Integer.TYPE),
-                    serverCnxnFactoryClass.getDeclaredMethod("startup", ZooKeeperServer.class),
-                    serverCnxnFactoryClass.getDeclaredMethod("shutdown")
-                );
-            }
-            else if ( nioServerCnxnFactoryClass != null )
-            {
-                localNioServerCnxn = new NioServerCnxnMethods
-                (
-                    nioServerCnxnFactoryClass.getConstructor(InetSocketAddress.class),
-                    nioServerCnxnFactoryClass.getDeclaredMethod("startup", ZooKeeperServer.class),
-                    nioServerCnxnFactoryClass.getDeclaredMethod("shutdown")
-                );
-            }
-        }
-        catch ( Exception e )
-        {
-            e.printStackTrace();
-            throw new Error(e);
-        }
+		try {
+			nioServerCnxnFactoryClass = Class
+					.forName("org.apache.zookeeper.server.NIOServerCnxn$Factory");
+		} catch (ClassNotFoundException ignore) {
+			// ignore
+		}
 
-        serverCnxnFactoryMethods = localServerCnxnFactoryMethods;
-        nioServerCnxn = localNioServerCnxn;
-    }
+		ServerCnxnFactoryMethods localServerCnxnFactoryMethods = null;
+		NioServerCnxnMethods localNioServerCnxn = null;
+		try {
+			if (serverCnxnFactoryClass != null) {
+				localServerCnxnFactoryMethods = new ServerCnxnFactoryMethods(
+						serverCnxnFactoryClass.getConstructor(),
+						serverCnxnFactoryClass.getDeclaredMethod("configure",
+								InetSocketAddress.class, Integer.TYPE),
+						serverCnxnFactoryClass.getDeclaredMethod("startup",
+								ZooKeeperServer.class),
+						serverCnxnFactoryClass.getDeclaredMethod("shutdown"));
+			} else if (nioServerCnxnFactoryClass != null) {
+				localNioServerCnxn = new NioServerCnxnMethods(
+						nioServerCnxnFactoryClass
+								.getConstructor(InetSocketAddress.class),
+						nioServerCnxnFactoryClass.getDeclaredMethod("startup",
+								ZooKeeperServer.class),
+						nioServerCnxnFactoryClass.getDeclaredMethod("shutdown"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new Error(e);
+		}
 
-    static Object       makeFactory(ZooKeeperServer server, int port) throws Exception
-    {
-        Object      factory;
-        if ( nioServerCnxn != null )
-        {
-            factory = nioServerCnxn.constructor.newInstance(new InetSocketAddress(port));
-            if ( server != null )
-            {
-                nioServerCnxn.startupMethod.invoke(factory, server);
-            }
-        }
-        else
-        {
-            factory = serverCnxnFactoryMethods.constructor.newInstance();
-            serverCnxnFactoryMethods.configureMethod.invoke(factory, new InetSocketAddress(port), 0);
-            if ( server != null )
-            {
-                serverCnxnFactoryMethods.startupMethod.invoke(factory, server);
-            }
-        }
-        return factory;
-    }
-    
-    static void         shutdownFactory(Object factory)
-    {
-        try
-        {
-            if ( nioServerCnxn != null )
-            {
-                nioServerCnxn.shutdownMethod.invoke(factory);
-            }
-            else
-            {
-                serverCnxnFactoryMethods.shutdownMethod.invoke(factory);
-            }
-        }
-        catch ( Exception e )
-        {
-            e.printStackTrace();
-            throw new Error(e);
-        }
-    }
+		serverCnxnFactoryMethods = localServerCnxnFactoryMethods;
+		nioServerCnxn = localNioServerCnxn;
+	}
 
-    private ServerHelper()
-    {
-    }
+	static Object makeFactory(ZooKeeperServer server, int port)
+			throws Exception {
+		Object factory;
+		if (nioServerCnxn != null) {
+			factory = nioServerCnxn.constructor
+					.newInstance(new InetSocketAddress(port));
+			if (server != null) {
+				nioServerCnxn.startupMethod.invoke(factory, server);
+			}
+		} else {
+			factory = serverCnxnFactoryMethods.constructor.newInstance();
+			serverCnxnFactoryMethods.configureMethod.invoke(factory,
+					new InetSocketAddress(port), 0);
+			if (server != null) {
+				serverCnxnFactoryMethods.startupMethod.invoke(factory, server);
+			}
+		}
+		return factory;
+	}
+
+	static void shutdownFactory(Object factory) {
+		try {
+			if (nioServerCnxn != null) {
+				nioServerCnxn.shutdownMethod.invoke(factory);
+			} else {
+				serverCnxnFactoryMethods.shutdownMethod.invoke(factory);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new Error(e);
+		}
+	}
+
+	private ServerHelper() {
+	}
 }
