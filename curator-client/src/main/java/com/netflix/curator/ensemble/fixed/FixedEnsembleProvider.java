@@ -27,33 +27,33 @@ import java.io.IOException;
  */
 public class FixedEnsembleProvider implements EnsembleProvider
 {
-    private final String connectionString;
+	private final String connectionString;
 
-    /**
-     * The connection string to use
-     *
-     * @param connectionString connection string
-     */
-    public FixedEnsembleProvider(String connectionString)
-    {
-        this.connectionString = Preconditions.checkNotNull(connectionString, "connectionString cannot be null");
-    }
+	/**
+	 * The connection string to use
+	 *
+	 * @param connectionString connection string
+	 */
+	public FixedEnsembleProvider(String connectionString)
+	{
+		this.connectionString = Preconditions.checkNotNull(connectionString, "connectionString cannot be null");
+	}
 
-    @Override
-    public void start() throws Exception
-    {
-        // NOP
-    }
+	@Override
+	public void start() throws Exception
+	{
+		// NOP
+	}
 
-    @Override
-    public void close() throws IOException
-    {
-        // NOP
-    }
+	@Override
+	public void close() throws IOException
+	{
+		// NOP
+	}
 
-    @Override
-    public String getConnectionString()
-    {
-        return connectionString;
-    }
+	@Override
+	public String getConnectionString()
+	{
+		return connectionString;
+	}
 }

@@ -51,70 +51,70 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class EnsurePath
 {
-    private final String                    path;
-    private final AtomicReference<Helper>   helper = new AtomicReference<Helper>();
+	private final String                    path;
+	private final AtomicReference<Helper>   helper = new AtomicReference<Helper>();
 
-    private static final Helper             doNothingHelper = new Helper()
-    {
-        @Override
-        public void ensure(CuratorZookeeperClient client, String path) throws Exception
-        {
-            // NOP
-        }
-    };
+	private static final Helper             doNothingHelper = new Helper()
+	{
+		@Override
+		public void ensure(CuratorZookeeperClient client, String path) throws Exception
+		{
+			// NOP
+		}
+	};
 
-    private interface Helper
-    {
-        public void     ensure(CuratorZookeeperClient client, String path) throws Exception;
-    }
+	private interface Helper
+	{
+		public void     ensure(CuratorZookeeperClient client, String path) throws Exception;
+	}
 
-    /**
-     * @param path the full path to ensure
-     */
-    public EnsurePath(String path)
-    {
-        this.path = path;
-        helper.set(new InitialHelper());
-    }
+	/**
+	 * @param path the full path to ensure
+	 */
+	public EnsurePath(String path)
+	{
+		this.path = path;
+		helper.set(new InitialHelper());
+	}
 
-    /**
-     * First time, synchronizes and makes sure all nodes in the path are created. Subsequent calls
-     * with this instance are NOPs.
-     *
-     * @param client ZK client
-     * @throws Exception ZK errors
-     */
-    public void     ensure(CuratorZookeeperClient client) throws Exception
-    {
-        Helper  localHelper = helper.get();
-        localHelper.ensure(client, path);
-    }
+	/**
+	 * First time, synchronizes and makes sure all nodes in the path are created. Subsequent calls
+	 * with this instance are NOPs.
+	 *
+	 * @param client ZK client
+	 * @throws Exception ZK errors
+	 */
+	public void     ensure(CuratorZookeeperClient client) throws Exception
+	{
+		Helper  localHelper = helper.get();
+		localHelper.ensure(client, path);
+	}
 
-    private class InitialHelper implements Helper
-    {
-        private boolean         isSet = false;  // guarded by synchronization
+	private class InitialHelper implements Helper
+	{
+		private boolean         isSet = false;  // guarded by synchronization
 
-        @Override
-        public synchronized void ensure(final CuratorZookeeperClient client, final String path) throws Exception
-        {
-            if ( !isSet )
-            {
-                RetryLoop.callWithRetry
-                (
-                    client,
-                    new Callable<Object>()
-                    {
-                        @Override
-                        public Object call() throws Exception
-                        {
-                            ZKPaths.mkdirs(client.getZooKeeper(), path, true);
-                            helper.set(doNothingHelper);
-                            isSet = true;
-                            return null;
-                        }
-                    }
-                );
-            }
-        }
-    }
+		@Override
+		public synchronized void ensure(final CuratorZookeeperClient client, final String path) throws Exception
+		{
+			if ( !isSet )
+			{
+				RetryLoop.callWithRetry
+				(
+						client,
+						new Callable<Object>()
+						{
+							@Override
+							public Object call() throws Exception
+							{
+								ZKPaths.mkdirs(client.getZooKeeper(), path, true);
+								helper.set(doNothingHelper);
+								isSet = true;
+								return null;
+							}
+						}
+						);
+			}
+		}
+	}
 }

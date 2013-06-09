@@ -25,114 +25,114 @@ import org.apache.zookeeper.ZooKeeper;
 
 class HandleHolder
 {
-    private final ZookeeperFactory zookeeperFactory;
-    private final Watcher watcher;
-    private final EnsembleProvider ensembleProvider;
-    private final int sessionTimeout;
-    private final boolean canBeReadOnly;
+	private final ZookeeperFactory zookeeperFactory;
+	private final Watcher watcher;
+	private final EnsembleProvider ensembleProvider;
+	private final int sessionTimeout;
+	private final boolean canBeReadOnly;
 
-    private volatile Helper helper;
+	private volatile Helper helper;
 
-    private interface Helper
-    {
-        ZooKeeper getZooKeeper() throws Exception;
-        
-        String getConnectionString();
-    }
+	private interface Helper
+	{
+		ZooKeeper getZooKeeper() throws Exception;
 
-    HandleHolder(ZookeeperFactory zookeeperFactory, Watcher watcher, EnsembleProvider ensembleProvider, int sessionTimeout, boolean canBeReadOnly)
-    {
-        this.zookeeperFactory = zookeeperFactory;
-        this.watcher = watcher;
-        this.ensembleProvider = ensembleProvider;
-        this.sessionTimeout = sessionTimeout;
-        this.canBeReadOnly = canBeReadOnly;
-    }
+		String getConnectionString();
+	}
 
-    ZooKeeper getZooKeeper() throws Exception
-    {
-        return helper.getZooKeeper();
-    }
+	HandleHolder(ZookeeperFactory zookeeperFactory, Watcher watcher, EnsembleProvider ensembleProvider, int sessionTimeout, boolean canBeReadOnly)
+	{
+		this.zookeeperFactory = zookeeperFactory;
+		this.watcher = watcher;
+		this.ensembleProvider = ensembleProvider;
+		this.sessionTimeout = sessionTimeout;
+		this.canBeReadOnly = canBeReadOnly;
+	}
 
-    String  getConnectionString()
-    {
-        return (helper != null) ? helper.getConnectionString() : null;
-    }
+	ZooKeeper getZooKeeper() throws Exception
+	{
+		return helper.getZooKeeper();
+	}
 
-    boolean hasNewConnectionString() 
-    {
-        String helperConnectionString = (helper != null) ? helper.getConnectionString() : null;
-        return (helperConnectionString != null) && !ensembleProvider.getConnectionString().equals(helperConnectionString);
-    }
+	String  getConnectionString()
+	{
+		return (helper != null) ? helper.getConnectionString() : null;
+	}
 
-    void closeAndClear() throws Exception
-    {
-        internalClose();
-        helper = null;
-    }
+	boolean hasNewConnectionString() 
+	{
+		String helperConnectionString = (helper != null) ? helper.getConnectionString() : null;
+		return (helperConnectionString != null) && !ensembleProvider.getConnectionString().equals(helperConnectionString);
+	}
 
-    void closeAndReset() throws Exception
-    {
-        internalClose();
+	void closeAndClear() throws Exception
+	{
+		internalClose();
+		helper = null;
+	}
 
-        // first helper is synchronized when getZooKeeper is called. Subsequent calls
-        // are not synchronized.
-        helper = new Helper()
-        {
-            private volatile ZooKeeper zooKeeperHandle = null;
-            private volatile String connectionString = null;
+	void closeAndReset() throws Exception
+	{
+		internalClose();
 
-            @Override
-            public ZooKeeper getZooKeeper() throws Exception
-            {
-                synchronized(this)
-                {
-                    if ( zooKeeperHandle == null )
-                    {
-                        connectionString = ensembleProvider.getConnectionString();
-                        zooKeeperHandle = zookeeperFactory.newZooKeeper(connectionString, sessionTimeout, watcher, canBeReadOnly);
-                    }
+		// first helper is synchronized when getZooKeeper is called. Subsequent calls
+		// are not synchronized.
+		helper = new Helper()
+		{
+			private volatile ZooKeeper zooKeeperHandle = null;
+			private volatile String connectionString = null;
 
-                    helper = new Helper()
-                    {
-                        @Override
-                        public ZooKeeper getZooKeeper() throws Exception
-                        {
-                            return zooKeeperHandle;
-                        }
+			@Override
+			public ZooKeeper getZooKeeper() throws Exception
+			{
+				synchronized(this)
+				{
+					if ( zooKeeperHandle == null )
+					{
+						connectionString = ensembleProvider.getConnectionString();
+						zooKeeperHandle = zookeeperFactory.newZooKeeper(connectionString, sessionTimeout, watcher, canBeReadOnly);
+					}
 
-                        @Override
-                        public String getConnectionString()
-                        {
-                            return connectionString;
-                        }
-                    };
+					helper = new Helper()
+					{
+						@Override
+						public ZooKeeper getZooKeeper() throws Exception
+						{
+							return zooKeeperHandle;
+						}
 
-                    return zooKeeperHandle;
-                }
-            }
+						@Override
+						public String getConnectionString()
+						{
+							return connectionString;
+						}
+					};
 
-            @Override
-            public String getConnectionString()
-            {
-                return connectionString;
-            }
-        };
-    }
+					return zooKeeperHandle;
+				}
+			}
 
-    private void internalClose() throws Exception
-    {
-        try
-        {
-            ZooKeeper zooKeeper = (helper != null) ? helper.getZooKeeper() : null;
-            if ( zooKeeper != null )
-            {
-                zooKeeper.close();
-            }
-        }
-        catch ( InterruptedException dummy )
-        {
-            Thread.currentThread().interrupt();
-        }
-    }
+			@Override
+			public String getConnectionString()
+			{
+				return connectionString;
+			}
+		};
+	}
+
+	private void internalClose() throws Exception
+	{
+		try
+		{
+			ZooKeeper zooKeeper = (helper != null) ? helper.getZooKeeper() : null;
+			if ( zooKeeper != null )
+			{
+				zooKeeper.close();
+			}
+		}
+		catch ( InterruptedException dummy )
+		{
+			Thread.currentThread().interrupt();
+		}
+	}
 }

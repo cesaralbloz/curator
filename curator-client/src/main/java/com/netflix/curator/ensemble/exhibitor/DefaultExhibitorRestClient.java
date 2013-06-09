@@ -24,45 +24,44 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 
-@SuppressWarnings("UnusedDeclaration")
 public class DefaultExhibitorRestClient implements ExhibitorRestClient
 {
-    private final boolean useSsl;
+	private final boolean useSsl;
 
-    public DefaultExhibitorRestClient()
-    {
-        this(false);
-    }
+	public DefaultExhibitorRestClient()
+	{
+		this(false);
+	}
 
-    public DefaultExhibitorRestClient(boolean useSsl)
-    {
-        this.useSsl = useSsl;
-    }
+	public DefaultExhibitorRestClient(boolean useSsl)
+	{
+		this.useSsl = useSsl;
+	}
 
-    @Override
-    public String getRaw(String hostname, int port, String uriPath, String mimeType) throws Exception
-    {
-        URI                 uri = new URI(useSsl ? "https" : "http", null, hostname, port, uriPath, null, null);
-        HttpURLConnection   connection = (HttpURLConnection)uri.toURL().openConnection();
-        connection.addRequestProperty("Accept", mimeType);
-        StringBuilder       str = new StringBuilder();
-        InputStream         in = new BufferedInputStream(connection.getInputStream());
-        try
-        {
-            for(;;)
-            {
-                int     b = in.read();
-                if ( b < 0 )
-                {
-                    break;
-                }
-                str.append((char)(b & 0xff));
-            }
-        }
-        finally
-        {
-            Closeables.closeQuietly(in);
-        }
-        return str.toString();
-    }
+	@Override
+	public String getRaw(String hostname, int port, String uriPath, String mimeType) throws Exception
+	{
+		URI                 uri = new URI(useSsl ? "https" : "http", null, hostname, port, uriPath, null, null);
+		HttpURLConnection   connection = (HttpURLConnection)uri.toURL().openConnection();
+		connection.addRequestProperty("Accept", mimeType);
+		StringBuilder       str = new StringBuilder();
+		InputStream         in = new BufferedInputStream(connection.getInputStream());
+		try
+		{
+			for(;;)
+			{
+				int     b = in.read();
+				if ( b < 0 )
+				{
+					break;
+				}
+				str.append((char)(b & 0xff));
+			}
+		}
+		finally
+		{
+			Closeables.closeQuietly(in);
+		}
+		return str.toString();
+	}
 }

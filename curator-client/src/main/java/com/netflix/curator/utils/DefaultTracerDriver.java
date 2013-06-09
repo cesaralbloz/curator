@@ -27,17 +27,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultTracerDriver implements TracerDriver
 {
-    private final Logger log = LoggerFactory.getLogger(getClass());
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Override
-    public void addTrace(String name, long time, TimeUnit unit)
-    {
-        log.trace("Trace: " + TimeUnit.MILLISECONDS.convert(time, unit) + " ms");
-    }
+	@Override
+	public void addTrace(String name, long time, TimeUnit unit)
+	{
+		log.trace("Trace: " + TimeUnit.MILLISECONDS.convert(time, unit) + " ms");
+	}
 
-    @Override
-    public void addCount(String name, int increment)
-    {
-        log.trace("Counter " + name + ": " + increment);
-    }
+	@Override
+	public void addCount(String name, int increment)
+	{
+		log.trace("Counter " + name + ": " + increment);
+	}
 }

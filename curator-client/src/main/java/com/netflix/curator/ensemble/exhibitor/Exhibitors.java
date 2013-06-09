@@ -27,40 +27,40 @@ import java.util.Collection;
  */
 public class Exhibitors
 {
-    private final Collection<String> hostnames;
-    private final int restPort;
-    private final BackupConnectionStringProvider backupConnectionStringProvider;
+	private final Collection<String> hostnames;
+	private final int restPort;
+	private final BackupConnectionStringProvider backupConnectionStringProvider;
 
-    public interface BackupConnectionStringProvider
-    {
-        public String getBackupConnectionString() throws Exception;
-    }
+	public interface BackupConnectionStringProvider
+	{
+		public String getBackupConnectionString() throws Exception;
+	}
 
-    /**
-     * @param hostnames set of Exhibitor instance host names
-     * @param restPort the REST port used to connect to Exhibitor
-     * @param backupConnectionStringProvider in case an Exhibitor instance can't be contacted, returns the fixed
-     *                               connection string to use as a backup
-     */
-    public Exhibitors(Collection<String> hostnames, int restPort, BackupConnectionStringProvider backupConnectionStringProvider)
-    {
-        this.backupConnectionStringProvider = Preconditions.checkNotNull(backupConnectionStringProvider, "backupConnectionStringProvider cannot be null");
-        this.hostnames = ImmutableList.copyOf(hostnames);
-        this.restPort = restPort;
-    }
+	/**
+	 * @param hostnames set of Exhibitor instance host names
+	 * @param restPort the REST port used to connect to Exhibitor
+	 * @param backupConnectionStringProvider in case an Exhibitor instance can't be contacted, returns the fixed
+	 *                               connection string to use as a backup
+	 */
+	public Exhibitors(Collection<String> hostnames, int restPort, BackupConnectionStringProvider backupConnectionStringProvider)
+	{
+		this.backupConnectionStringProvider = Preconditions.checkNotNull(backupConnectionStringProvider, "backupConnectionStringProvider cannot be null");
+		this.hostnames = ImmutableList.copyOf(hostnames);
+		this.restPort = restPort;
+	}
 
-    public Collection<String> getHostnames()
-    {
-        return hostnames;
-    }
+	public Collection<String> getHostnames()
+	{
+		return hostnames;
+	}
 
-    public int getRestPort()
-    {
-        return restPort;
-    }
+	public int getRestPort()
+	{
+		return restPort;
+	}
 
-    public String getBackupConnectionString() throws Exception
-    {
-        return backupConnectionStringProvider.getBackupConnectionString();
-    }
+	public String getBackupConnectionString() throws Exception
+	{
+		return backupConnectionStringProvider.getBackupConnectionString();
+	}
 }

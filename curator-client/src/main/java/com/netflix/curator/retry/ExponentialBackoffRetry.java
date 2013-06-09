@@ -25,29 +25,29 @@ import java.util.Random;
  */
 public class ExponentialBackoffRetry extends SleepingRetry
 {
-    private final Random random = new Random();
-    private final int baseSleepTimeMs;
+	private final Random random = new Random();
+	private final int baseSleepTimeMs;
 
-    /**
-     * @param baseSleepTimeMs initial amount of time to wait between retries
-     * @param maxRetries max number of times to retry
-     */
-    public ExponentialBackoffRetry(int baseSleepTimeMs, int maxRetries)
-    {
-        super(maxRetries);
-        this.baseSleepTimeMs = baseSleepTimeMs;
-    }
+	/**
+	 * @param baseSleepTimeMs initial amount of time to wait between retries
+	 * @param maxRetries max number of times to retry
+	 */
+	public ExponentialBackoffRetry(int baseSleepTimeMs, int maxRetries)
+	{
+		super(maxRetries);
+		this.baseSleepTimeMs = baseSleepTimeMs;
+	}
 
-    @VisibleForTesting
-    public int getBaseSleepTimeMs()
-    {
-        return baseSleepTimeMs;
-    }
+	@VisibleForTesting
+	public int getBaseSleepTimeMs()
+	{
+		return baseSleepTimeMs;
+	}
 
-    @Override
-    protected int getSleepTimeMs(int retryCount, long elapsedTimeMs)
-    {
-        // copied from Hadoop's RetryPolicies.java
-        return baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount+1)));
-    }
+	@Override
+	protected int getSleepTimeMs(int retryCount, long elapsedTimeMs)
+	{
+		// copied from Hadoop's RetryPolicies.java
+		return baseSleepTimeMs * Math.max(1, random.nextInt(1 << (retryCount+1)));
+	}
 }

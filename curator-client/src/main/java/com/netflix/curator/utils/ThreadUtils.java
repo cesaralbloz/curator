@@ -24,31 +24,31 @@ import java.util.concurrent.ThreadFactory;
 
 public class ThreadUtils
 {
-    public static ExecutorService newSingleThreadExecutor(String processName)
-    {
-        return Executors.newSingleThreadExecutor(newThreadFactory(processName));
-    }
+	public static ExecutorService newSingleThreadExecutor(String processName)
+	{
+		return Executors.newSingleThreadExecutor(newThreadFactory(processName));
+	}
 
-    public static ExecutorService newFixedThreadPool(int qty, String processName)
-    {
-        return Executors.newFixedThreadPool(qty, newThreadFactory(processName));
-    }
+	public static ExecutorService newFixedThreadPool(int qty, String processName)
+	{
+		return Executors.newFixedThreadPool(qty, newThreadFactory(processName));
+	}
 
-    public static ScheduledExecutorService newSingleThreadScheduledExecutor(String processName)
-    {
-        return Executors.newSingleThreadScheduledExecutor(newThreadFactory(processName));
-    }
+	public static ScheduledExecutorService newSingleThreadScheduledExecutor(String processName)
+	{
+		return Executors.newSingleThreadScheduledExecutor(newThreadFactory(processName));
+	}
 
-    public static ScheduledExecutorService newFixedThreadScheduledPool(int qty, String processName)
-    {
-        return Executors.newScheduledThreadPool(qty, newThreadFactory(processName));
-    }
+	public static ScheduledExecutorService newFixedThreadScheduledPool(int qty, String processName)
+	{
+		return Executors.newScheduledThreadPool(qty, newThreadFactory(processName));
+	}
 
-    public static ThreadFactory newThreadFactory(String processName)
-    {
-        return new ThreadFactoryBuilder()
-            .setNameFormat(processName + "-%d")
-            .setDaemon(true)
-            .build();
-    }
+	public static ThreadFactory newThreadFactory(String processName)
+	{
+		return new ThreadFactoryBuilder()
+		.setNameFormat(processName + "-%d")
+		.setDaemon(true)
+		.build();
+	}
 }

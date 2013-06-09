@@ -73,165 +73,166 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SessionFailRetryLoop implements Closeable
 {
-    private final CuratorZookeeperClient    client;
-    private final Mode                      mode;
-    private final Thread                    ourThread = Thread.currentThread();
-    private final AtomicBoolean             sessionHasFailed = new AtomicBoolean(false);
-    private final AtomicBoolean             isDone = new AtomicBoolean(false);
-    private final RetryLoop                 retryLoop;
+	private final CuratorZookeeperClient    client;
+	private final Mode                      mode;
+	private final Thread                    ourThread = Thread.currentThread();
+	private final AtomicBoolean             sessionHasFailed = new AtomicBoolean(false);
+	private final AtomicBoolean             isDone = new AtomicBoolean(false);
+	private final RetryLoop                 retryLoop;
 
-    private final Watcher         watcher = new Watcher()
-    {
-        @Override
-        public void process(WatchedEvent event)
-        {
-            if ( event.getState() == Event.KeeperState.Expired )
-            {
-                sessionHasFailed.set(true);
-                failedSessionThreads.add(ourThread);
-            }
-        }
-    };
+	private final Watcher         watcher = new Watcher()
+	{
+		@Override
+		public void process(WatchedEvent event)
+		{
+			if ( event.getState() == Event.KeeperState.Expired )
+			{
+				sessionHasFailed.set(true);
+				failedSessionThreads.add(ourThread);
+			}
+		}
+	};
 
-    private static final Set<Thread>        failedSessionThreads = Sets.newSetFromMap(Maps.<Thread, Boolean>newConcurrentMap());
+	private static final Set<Thread>        failedSessionThreads = Sets.newSetFromMap(Maps.<Thread, Boolean>newConcurrentMap());
 
-    public static class SessionFailedException extends Exception
-    {
-    }
+	public static class SessionFailedException extends Exception
+	{
+		private static final long serialVersionUID = 1L;
+	}
 
-    public enum Mode
-    {
-        /**
-         * If the session fails, retry the entire set of operations when {@link SessionFailRetryLoop#shouldContinue()}
-         * is called
-         */
-        RETRY,
+	public enum Mode
+	{
+		/**
+		 * If the session fails, retry the entire set of operations when {@link SessionFailRetryLoop#shouldContinue()}
+		 * is called
+		 */
+		RETRY,
 
-        /**
-         * If the session fails, throw {@link KeeperException.SessionExpiredException} when
-         * {@link SessionFailRetryLoop#shouldContinue()} is called
-         */
-        FAIL
-    }
+		/**
+		 * If the session fails, throw {@link KeeperException.SessionExpiredException} when
+		 * {@link SessionFailRetryLoop#shouldContinue()} is called
+		 */
+		FAIL
+	}
 
-    /**
-     * Convenience utility: creates a "session fail" retry loop calling the given proc
-     *
-     * @param client Zookeeper
-     * @param mode how to handle session failures
-     * @param proc procedure to call with retry
-     * @param <T> return type
-     * @return procedure result
-     * @throws Exception any non-retriable errors
-     */
-    public static<T> T      callWithRetry(CuratorZookeeperClient client, Mode mode, Callable<T> proc) throws Exception
-    {
-        T                       result = null;
-        SessionFailRetryLoop    retryLoop = client.newSessionFailRetryLoop(mode);
-        retryLoop.start();
-        try
-        {
-            while ( retryLoop.shouldContinue() )
-            {
-                try
-                {
-                    result = proc.call();
-                }
-                catch ( Exception e )
-                {
-                    retryLoop.takeException(e);
-                }
-            }
-        }
-        finally
-        {
-            retryLoop.close();
-        }
-        return result;
-    }
+	/**
+	 * Convenience utility: creates a "session fail" retry loop calling the given proc
+	 *
+	 * @param client Zookeeper
+	 * @param mode how to handle session failures
+	 * @param proc procedure to call with retry
+	 * @param <T> return type
+	 * @return procedure result
+	 * @throws Exception any non-retriable errors
+	 */
+	public static<T> T      callWithRetry(CuratorZookeeperClient client, Mode mode, Callable<T> proc) throws Exception
+	{
+		T                       result = null;
+		SessionFailRetryLoop    retryLoop = client.newSessionFailRetryLoop(mode);
+		retryLoop.start();
+		try
+		{
+			while ( retryLoop.shouldContinue() )
+			{
+				try
+				{
+					result = proc.call();
+				}
+				catch ( Exception e )
+				{
+					retryLoop.takeException(e);
+				}
+			}
+		}
+		finally
+		{
+			retryLoop.close();
+		}
+		return result;
+	}
 
-    SessionFailRetryLoop(CuratorZookeeperClient client, Mode mode)
-    {
-        this.client = client;
-        this.mode = mode;
-        retryLoop = client.newRetryLoop();
-    }
+	SessionFailRetryLoop(CuratorZookeeperClient client, Mode mode)
+	{
+		this.client = client;
+		this.mode = mode;
+		retryLoop = client.newRetryLoop();
+	}
 
-    static boolean sessionForThreadHasFailed()
-    {
-        return (failedSessionThreads.size() > 0) && failedSessionThreads.contains(Thread.currentThread());
-    }
+	static boolean sessionForThreadHasFailed()
+	{
+		return (failedSessionThreads.size() > 0) && failedSessionThreads.contains(Thread.currentThread());
+	}
 
-    /**
-     * SessionFailRetryLoop must be started
-     */
-    public void     start()
-    {
-        Preconditions.checkState(Thread.currentThread().equals(ourThread), "Not in the correct thread");
+	/**
+	 * SessionFailRetryLoop must be started
+	 */
+	public void     start()
+	{
+		Preconditions.checkState(Thread.currentThread().equals(ourThread), "Not in the correct thread");
 
-        client.addParentWatcher(watcher);
-    }
+		client.addParentWatcher(watcher);
+	}
 
-    /**
-     * If true is returned, make an attempt at the set of operations
-     *
-     * @return true/false
-     */
-    public boolean      shouldContinue()
-    {
-        boolean     localIsDone = isDone.getAndSet(true);
-        return !localIsDone;
-    }
+	/**
+	 * If true is returned, make an attempt at the set of operations
+	 *
+	 * @return true/false
+	 */
+	public boolean      shouldContinue()
+	{
+		boolean     localIsDone = isDone.getAndSet(true);
+		return !localIsDone;
+	}
 
-    /**
-     * Must be called in a finally handler when done with the loop
-     */
-    @Override
-    public void close()
-    {
-        Preconditions.checkState(Thread.currentThread().equals(ourThread), "Not in the correct thread");
-        failedSessionThreads.remove(ourThread);
+	/**
+	 * Must be called in a finally handler when done with the loop
+	 */
+	@Override
+	public void close()
+	{
+		Preconditions.checkState(Thread.currentThread().equals(ourThread), "Not in the correct thread");
+		failedSessionThreads.remove(ourThread);
 
-        client.removeParentWatcher(watcher);
-    }
+		client.removeParentWatcher(watcher);
+	}
 
-    /**
-     * Pass any caught exceptions here
-     *
-     * @param exception the exception
-     * @throws Exception if not retry-able or the retry policy returned negative
-     */
-    public void         takeException(Exception exception) throws Exception
-    {
-        Preconditions.checkState(Thread.currentThread().equals(ourThread), "Not in the correct thread");
+	/**
+	 * Pass any caught exceptions here
+	 *
+	 * @param exception the exception
+	 * @throws Exception if not retry-able or the retry policy returned negative
+	 */
+	public void         takeException(Exception exception) throws Exception
+	{
+		Preconditions.checkState(Thread.currentThread().equals(ourThread), "Not in the correct thread");
 
-        boolean     passUp = true;
-        if ( sessionHasFailed.get() )
-        {
-            switch ( mode )
-            {
-                case RETRY:
-                {
-                    sessionHasFailed.set(false);
-                    failedSessionThreads.remove(ourThread);
-                    if ( exception instanceof SessionFailedException )
-                    {
-                        isDone.set(false);
-                        passUp = false;
-                    }
-                    break;
-                }
+		boolean     passUp = true;
+		if ( sessionHasFailed.get() )
+		{
+			switch ( mode )
+			{
+			case RETRY:
+			{
+				sessionHasFailed.set(false);
+				failedSessionThreads.remove(ourThread);
+				if ( exception instanceof SessionFailedException )
+				{
+					isDone.set(false);
+					passUp = false;
+				}
+				break;
+			}
 
-                case FAIL:
-                {
-                    break;
-                }
-            }
-        }
+			case FAIL:
+			{
+				break;
+			}
+			}
+		}
 
-        if ( passUp )
-        {
-            retryLoop.takeException(exception);
-        }
-    }
+		if ( passUp )
+		{
+			retryLoop.takeException(exception);
+		}
+	}
 }

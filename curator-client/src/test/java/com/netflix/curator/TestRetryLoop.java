@@ -27,102 +27,102 @@ import java.io.File;
 
 public class TestRetryLoop extends BaseClassForTests
 {
-    @Test
-    public void     testRetryLoopWithFailure() throws Exception
-    {
-        int                 serverPort = server.getPort();
-        File                tempDirectory = server.getTempDirectory();
+	@Test
+	public void     testRetryLoopWithFailure() throws Exception
+	{
+		int                 serverPort = server.getPort();
+		File                tempDirectory = server.getTempDirectory();
 
-        CuratorZookeeperClient client = new CuratorZookeeperClient(server.getConnectString(), 5000, 5000, null, new RetryOneTime(1));
-        client.start();
-        try
-        {
-            int         loopCount = 0;
-            RetryLoop   retryLoop = client.newRetryLoop();
-            outer: while ( retryLoop.shouldContinue()  )
-            {
-                ++loopCount;
-                switch ( loopCount )
-                {
-                    case 1:
-                    {
-                        server.stop();
-                        break;
-                    }
+		CuratorZookeeperClient client = new CuratorZookeeperClient(server.getConnectString(), 5000, 5000, null, new RetryOneTime(1));
+		client.start();
+		try
+		{
+			int         loopCount = 0;
+			RetryLoop   retryLoop = client.newRetryLoop();
+			outer: while ( retryLoop.shouldContinue()  )
+			{
+				++loopCount;
+				switch ( loopCount )
+				{
+				case 1:
+				{
+					server.stop();
+					break;
+				}
 
-                    case 2:
-                    {
-                        server = new TestingServer(serverPort, tempDirectory);
-                        break;
-                    }
+				case 2:
+				{
+					server = new TestingServer(serverPort, tempDirectory);
+					break;
+				}
 
-                    case 3:
-                    case 4:
-                    {
-                        // ignore
-                        break;
-                    }
+				case 3:
+				case 4:
+				{
+					// ignore
+					break;
+				}
 
-                    default:
-                    {
-                        Assert.fail();
-                        break outer;
-                    }
-                }
+				default:
+				{
+					Assert.fail();
+					break outer;
+				}
+				}
 
-                try
-                {
-                    client.blockUntilConnectedOrTimedOut();
-                    client.getZooKeeper().create("/test", new byte[]{1,2,3}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    retryLoop.markComplete();
-                }
-                catch ( Exception e )
-                {
-                    retryLoop.takeException(e);
-                }
-            }
+				try
+				{
+					client.blockUntilConnectedOrTimedOut();
+					client.getZooKeeper().create("/test", new byte[]{1,2,3}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					retryLoop.markComplete();
+				}
+				catch ( Exception e )
+				{
+					retryLoop.takeException(e);
+				}
+			}
 
-            Assert.assertTrue(loopCount >= 2);
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			Assert.assertTrue(loopCount >= 2);
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void     testRetryLoop() throws Exception
-    {
-        CuratorZookeeperClient client = new CuratorZookeeperClient(server.getConnectString(), 10000, 10000, null, new RetryOneTime(1));
-        client.start();
-        try
-        {
-            int         loopCount = 0;
-            RetryLoop   retryLoop = client.newRetryLoop();
-            while ( retryLoop.shouldContinue()  )
-            {
-                if ( ++loopCount > 2 )
-                {
-                    Assert.fail();
-                    break;
-                }
+	@Test
+	public void     testRetryLoop() throws Exception
+	{
+		CuratorZookeeperClient client = new CuratorZookeeperClient(server.getConnectString(), 10000, 10000, null, new RetryOneTime(1));
+		client.start();
+		try
+		{
+			int         loopCount = 0;
+			RetryLoop   retryLoop = client.newRetryLoop();
+			while ( retryLoop.shouldContinue()  )
+			{
+				if ( ++loopCount > 2 )
+				{
+					Assert.fail();
+					break;
+				}
 
-                try
-                {
-                    client.getZooKeeper().create("/test", new byte[]{1,2,3}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    retryLoop.markComplete();
-                }
-                catch ( Exception e )
-                {
-                    retryLoop.takeException(e);
-                }
-            }
+				try
+				{
+					client.getZooKeeper().create("/test", new byte[]{1,2,3}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					retryLoop.markComplete();
+				}
+				catch ( Exception e )
+				{
+					retryLoop.takeException(e);
+				}
+			}
 
-            Assert.assertTrue(loopCount > 0);
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			Assert.assertTrue(loopCount > 0);
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 }

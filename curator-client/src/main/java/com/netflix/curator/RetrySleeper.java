@@ -23,12 +23,12 @@ import java.util.concurrent.TimeUnit;
  */
 public interface RetrySleeper
 {
-    /**
-     * Sleep for the given time
-     *
-     * @param time time
-     * @param unit time unit
-     * @throws InterruptedException if the sleep is interrupted
-     */
-    public void     sleepFor(long time, TimeUnit unit) throws InterruptedException;
+	/**
+	 * Sleep for the given time
+	 *
+	 * @param time time
+	 * @param unit time unit
+	 * @throws InterruptedException if the sleep is interrupted
+	 */
+	public void     sleepFor(long time, TimeUnit unit) throws InterruptedException;
 }
