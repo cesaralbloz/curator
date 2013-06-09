@@ -20,8 +20,8 @@ package com.netflix.curator.framework.api;
 import org.apache.zookeeper.data.Stat;
 
 public interface SetDataBuilder extends
-    BackgroundPathAndBytesable<Stat>,
-    Versionable<BackgroundPathAndBytesable<Stat>>,
-    Compressible<SetDataBackgroundVersionable>
+BackgroundPathAndBytesable<Stat>,
+Versionable<BackgroundPathAndBytesable<Stat>>,
+Compressible<SetDataBackgroundVersionable>
 {
 }

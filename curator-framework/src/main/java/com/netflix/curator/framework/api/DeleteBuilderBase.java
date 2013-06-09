@@ -18,7 +18,7 @@
 package com.netflix.curator.framework.api;
 
 public interface DeleteBuilderBase extends
-    BackgroundPathable<Void>,
-    Versionable<BackgroundPathable<Void>>
+BackgroundPathable<Void>,
+Versionable<BackgroundPathable<Void>>
 {
 }

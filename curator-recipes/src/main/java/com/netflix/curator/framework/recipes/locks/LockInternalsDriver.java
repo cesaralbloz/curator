@@ -21,5 +21,5 @@ import java.util.List;
 
 interface LockInternalsDriver extends LockInternalsSorter
 {
-    public PredicateResults getsTheLock(CuratorFramework client, List<String> children, String sequenceNodeName, int maxLeases) throws Exception;
+	public PredicateResults getsTheLock(CuratorFramework client, List<String> children, String sequenceNodeName, int maxLeases) throws Exception;
 }

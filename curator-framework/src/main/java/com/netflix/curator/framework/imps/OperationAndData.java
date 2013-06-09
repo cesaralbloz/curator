@@ -112,7 +112,7 @@ class OperationAndData<T> implements Delayed, RetrySleeper
         {
             if ( o instanceof OperationAndData )
             {
-                diff = ordinal - ((OperationAndData)o).ordinal;
+                diff = ordinal - ((OperationAndData<?>)o).ordinal;
             }
         }
 

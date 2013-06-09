@@ -30,151 +30,151 @@ import java.io.Closeable;
  */
 public interface CuratorFramework extends Closeable
 {
-    /**
-     * Start the client. Most mutator methods will not work until the client is started
-     */
-    public void     start();
+	/**
+	 * Start the client. Most mutator methods will not work until the client is started
+	 */
+	public void     start();
 
-    /**
-     * Stop the client
-     */
-    public void     close();
+	/**
+	 * Stop the client
+	 */
+	public void     close();
 
-    /**
-     * Return true if the client is started, not closed, etc.
-     *
-     * @return true/false
-     */
-    public boolean  isStarted();
+	/**
+	 * Return true if the client is started, not closed, etc.
+	 *
+	 * @return true/false
+	 */
+	public boolean  isStarted();
 
-    /**
-     * Start a create builder
-     *
-     * @return builder object
-     */
-    public CreateBuilder create();
+	/**
+	 * Start a create builder
+	 *
+	 * @return builder object
+	 */
+	public CreateBuilder create();
 
-    /**
-     * Start a delete builder
-     *
-     * @return builder object
-     */
-    public DeleteBuilder delete();
+	/**
+	 * Start a delete builder
+	 *
+	 * @return builder object
+	 */
+	public DeleteBuilder delete();
 
-    /**
-     * Start an exists builder
-     *
-     * @return builder object
-     */
-    public ExistsBuilder checkExists();
+	/**
+	 * Start an exists builder
+	 *
+	 * @return builder object
+	 */
+	public ExistsBuilder checkExists();
 
-    /**
-     * Start a get data builder
-     *
-     * @return builder object
-     */
-    public GetDataBuilder getData();
+	/**
+	 * Start a get data builder
+	 *
+	 * @return builder object
+	 */
+	public GetDataBuilder getData();
 
-    /**
-     * Start a set data builder
-     *
-     * @return builder object
-     */
-    public SetDataBuilder setData();
+	/**
+	 * Start a set data builder
+	 *
+	 * @return builder object
+	 */
+	public SetDataBuilder setData();
 
-    /**
-     * Start a get children builder
-     *
-     * @return builder object
-     */
-    public GetChildrenBuilder getChildren();
+	/**
+	 * Start a get children builder
+	 *
+	 * @return builder object
+	 */
+	public GetChildrenBuilder getChildren();
 
-    /**
-     * Start a get ACL builder
-     *
-     * @return builder object
-     */
-    public GetACLBuilder getACL();
+	/**
+	 * Start a get ACL builder
+	 *
+	 * @return builder object
+	 */
+	public GetACLBuilder getACL();
 
-    /**
-     * Start a set ACL builder
-     *
-     * @return builder object
-     */
-    public SetACLBuilder setACL();
+	/**
+	 * Start a set ACL builder
+	 *
+	 * @return builder object
+	 */
+	public SetACLBuilder setACL();
 
-    /**
-     * Start a transaction builder
-     *
-     * @return builder object
-     */
-    public CuratorTransaction inTransaction();
+	/**
+	 * Start a transaction builder
+	 *
+	 * @return builder object
+	 */
+	public CuratorTransaction inTransaction();
 
-    /**
-     * Perform a sync on the given path - syncs are always in the background
-     *
-     * @param path the path
-     * @param backgroundContextObject optional context
-     */
-    public void     sync(String path, Object backgroundContextObject);
+	/**
+	 * Perform a sync on the given path - syncs are always in the background
+	 *
+	 * @param path the path
+	 * @param backgroundContextObject optional context
+	 */
+	public void     sync(String path, Object backgroundContextObject);
 
-    /**
-     * Returns the listenable interface for the Connect State
-     *
-     * @return listenable
-     */
-    public Listenable<ConnectionStateListener> getConnectionStateListenable();
+	/**
+	 * Returns the listenable interface for the Connect State
+	 *
+	 * @return listenable
+	 */
+	public Listenable<ConnectionStateListener> getConnectionStateListenable();
 
-    /**
-     * Returns the listenable interface for events
-     *
-     * @return listenable
-     */
-    public Listenable<CuratorListener>         getCuratorListenable();
+	/**
+	 * Returns the listenable interface for events
+	 *
+	 * @return listenable
+	 */
+	public Listenable<CuratorListener>         getCuratorListenable();
 
-    /**
-     * Returns the listenable interface for unhandled errors
-     *
-     * @return listenable
-     */
-    public Listenable<UnhandledErrorListener>  getUnhandledErrorListenable();
+	/**
+	 * Returns the listenable interface for unhandled errors
+	 *
+	 * @return listenable
+	 */
+	public Listenable<UnhandledErrorListener>  getUnhandledErrorListenable();
 
-    /**
-     * Returns a facade of the current instance that does _not_ automatically
-     * pre-pend the namespace to all paths
-     *
-     * @return facade
-     * @deprecated use {@link #usingNamespace} passing <code>null</code>
-     */
-    public CuratorFramework nonNamespaceView();
+	/**
+	 * Returns a facade of the current instance that does _not_ automatically
+	 * pre-pend the namespace to all paths
+	 *
+	 * @return facade
+	 * @deprecated use {@link #usingNamespace} passing <code>null</code>
+	 */
+	public CuratorFramework nonNamespaceView();
 
-    /**
-     * Returns a facade of the current instance that uses the specified namespace
-     * or no namespace if <code>newNamespace</code> is <code>null</code>.
-     *
-     * @param newNamespace the new namespace or null for none
-     * @return facade
-     */
-    public CuratorFramework usingNamespace(String newNamespace);
+	/**
+	 * Returns a facade of the current instance that uses the specified namespace
+	 * or no namespace if <code>newNamespace</code> is <code>null</code>.
+	 *
+	 * @param newNamespace the new namespace or null for none
+	 * @return facade
+	 */
+	public CuratorFramework usingNamespace(String newNamespace);
 
-    /**
-     * Return the current namespace or "" if none
-     * @return namespace
-     */
-    public String getNamespace();
+	/**
+	 * Return the current namespace or "" if none
+	 * @return namespace
+	 */
+	public String getNamespace();
 
-    /**
-     * Return the managed zookeeper client
-     *
-     * @return client
-     */
-    public CuratorZookeeperClient getZookeeperClient();
+	/**
+	 * Return the managed zookeeper client
+	 *
+	 * @return client
+	 */
+	public CuratorZookeeperClient getZookeeperClient();
 
-    /**
-     * Allocates an ensure path instance that is namespace aware
-     *
-     * @param path path to ensure
-     * @return new EnsurePath instance
-     */
-    public EnsurePath    newNamespaceAwareEnsurePath(String path);
+	/**
+	 * Allocates an ensure path instance that is namespace aware
+	 *
+	 * @param path path to ensure
+	 * @return new EnsurePath instance
+	 */
+	public EnsurePath    newNamespaceAwareEnsurePath(String path);
 }

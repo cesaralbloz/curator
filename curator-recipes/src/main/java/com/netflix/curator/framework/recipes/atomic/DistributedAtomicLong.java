@@ -35,196 +35,196 @@ import java.nio.ByteBuffer;
  */
 public class DistributedAtomicLong implements DistributedAtomicNumber<Long>
 {
-    private final DistributedAtomicValue        value;
+	private final DistributedAtomicValue        value;
 
-    /**
-     * Creates in optimistic mode only - i.e. the promotion to a mutex is not done
-     *
-     * @param client the client
-     * @param counterPath path to hold the value
-     * @param retryPolicy the retry policy to use
-     */
-    public DistributedAtomicLong(CuratorFramework client, String counterPath, RetryPolicy retryPolicy)
-    {
-        this(client, counterPath, retryPolicy, null);
-    }
+	/**
+	 * Creates in optimistic mode only - i.e. the promotion to a mutex is not done
+	 *
+	 * @param client the client
+	 * @param counterPath path to hold the value
+	 * @param retryPolicy the retry policy to use
+	 */
+	public DistributedAtomicLong(CuratorFramework client, String counterPath, RetryPolicy retryPolicy)
+	{
+		this(client, counterPath, retryPolicy, null);
+	}
 
-    /**
-     * Creates in mutex promotion mode. The optimistic lock will be tried first using
-     * the given retry policy. If the increment does not succeed, a {@link InterProcessMutex} will be tried
-     * with its own retry policy
-     *
-     * @param client the client
-     * @param counterPath path to hold the value
-     * @param retryPolicy the retry policy to use
-     * @param promotedToLock the arguments for the mutex promotion
-     */
-    public DistributedAtomicLong(CuratorFramework client, String counterPath, RetryPolicy retryPolicy, PromotedToLock promotedToLock)
-    {
-        value = new DistributedAtomicValue(client, counterPath, retryPolicy, promotedToLock);
-    }
+	/**
+	 * Creates in mutex promotion mode. The optimistic lock will be tried first using
+	 * the given retry policy. If the increment does not succeed, a {@link InterProcessMutex} will be tried
+	 * with its own retry policy
+	 *
+	 * @param client the client
+	 * @param counterPath path to hold the value
+	 * @param retryPolicy the retry policy to use
+	 * @param promotedToLock the arguments for the mutex promotion
+	 */
+	public DistributedAtomicLong(CuratorFramework client, String counterPath, RetryPolicy retryPolicy, PromotedToLock promotedToLock)
+	{
+		value = new DistributedAtomicValue(client, counterPath, retryPolicy, promotedToLock);
+	}
 
-    @Override
-    public AtomicValue<Long>     get() throws Exception
-    {
-        return new AtomicLong(value.get());
-    }
+	@Override
+	public AtomicValue<Long>     get() throws Exception
+	{
+		return new AtomicLong(value.get());
+	}
 
-    @Override
-    public void forceSet(Long newValue) throws Exception
-    {
-        value.forceSet(valueToBytes(newValue));
-    }
+	@Override
+	public void forceSet(Long newValue) throws Exception
+	{
+		value.forceSet(valueToBytes(newValue));
+	}
 
-    @Override
-    public AtomicValue<Long> compareAndSet(Long expectedValue, Long newValue) throws Exception
-    {
-        return new AtomicLong(value.compareAndSet(valueToBytes(expectedValue), valueToBytes(newValue)));
-    }
+	@Override
+	public AtomicValue<Long> compareAndSet(Long expectedValue, Long newValue) throws Exception
+	{
+		return new AtomicLong(value.compareAndSet(valueToBytes(expectedValue), valueToBytes(newValue)));
+	}
 
-    @Override
-    public AtomicValue<Long>   trySet(Long newValue) throws Exception
-    {
-        return new AtomicLong(value.trySet(valueToBytes(newValue)));
-    }
+	@Override
+	public AtomicValue<Long>   trySet(Long newValue) throws Exception
+	{
+		return new AtomicLong(value.trySet(valueToBytes(newValue)));
+	}
 
-    /**
-     * Add 1 to the current value and return the new value information. Remember to always
-     * check {@link AtomicValue#succeeded()}.
-     *
-     * @return value info
-     * @throws Exception ZooKeeper errors
-     */
-    @Override
-    public AtomicValue<Long>    increment() throws Exception
-    {
-        return worker(1L);
-    }
+	/**
+	 * Add 1 to the current value and return the new value information. Remember to always
+	 * check {@link AtomicValue#succeeded()}.
+	 *
+	 * @return value info
+	 * @throws Exception ZooKeeper errors
+	 */
+	@Override
+	public AtomicValue<Long>    increment() throws Exception
+	{
+		return worker(1L);
+	}
 
-    /**
-     * Subtract 1 from the current value and return the new value information. Remember to always
-     * check {@link AtomicValue#succeeded()}.
-     *
-     * @return value info
-     * @throws Exception ZooKeeper errors
-     */
-    @Override
-    public AtomicValue<Long>    decrement() throws Exception
-    {
-        return worker(-1L);
-    }
+	/**
+	 * Subtract 1 from the current value and return the new value information. Remember to always
+	 * check {@link AtomicValue#succeeded()}.
+	 *
+	 * @return value info
+	 * @throws Exception ZooKeeper errors
+	 */
+	@Override
+	public AtomicValue<Long>    decrement() throws Exception
+	{
+		return worker(-1L);
+	}
 
-    /**
-     * Add delta to the current value and return the new value information. Remember to always
-     * check {@link AtomicValue#succeeded()}.
-     *
-     * @param delta amount to add
-     * @return value info
-     * @throws Exception ZooKeeper errors
-     */
-    @Override
-    public AtomicValue<Long>    add(Long delta) throws Exception
-    {
-        return worker(delta);
-    }
+	/**
+	 * Add delta to the current value and return the new value information. Remember to always
+	 * check {@link AtomicValue#succeeded()}.
+	 *
+	 * @param delta amount to add
+	 * @return value info
+	 * @throws Exception ZooKeeper errors
+	 */
+	@Override
+	public AtomicValue<Long>    add(Long delta) throws Exception
+	{
+		return worker(delta);
+	}
 
-    /**
-     * Subtract delta from the current value and return the new value information. Remember to always
-     * check {@link AtomicValue#succeeded()}.
-     *
-     * @param delta amount to subtract
-     * @return value info
-     * @throws Exception ZooKeeper errors
-     */
-    @Override
-    public AtomicValue<Long> subtract(Long delta) throws Exception
-    {
-        return worker(-1 * delta);
-    }
+	/**
+	 * Subtract delta from the current value and return the new value information. Remember to always
+	 * check {@link AtomicValue#succeeded()}.
+	 *
+	 * @param delta amount to subtract
+	 * @return value info
+	 * @throws Exception ZooKeeper errors
+	 */
+	@Override
+	public AtomicValue<Long> subtract(Long delta) throws Exception
+	{
+		return worker(-1 * delta);
+	}
 
-    @VisibleForTesting
-    byte[] valueToBytes(Long newValue)
-    {
-        Preconditions.checkNotNull(newValue, "newValue cannot be null");
+	@VisibleForTesting
+	byte[] valueToBytes(Long newValue)
+	{
+		Preconditions.checkNotNull(newValue, "newValue cannot be null");
 
-        byte[]                      newData = new byte[8];
-        ByteBuffer wrapper = ByteBuffer.wrap(newData);
-        wrapper.putLong(newValue);
-        return newData;
-    }
+		byte[]                      newData = new byte[8];
+		ByteBuffer wrapper = ByteBuffer.wrap(newData);
+		wrapper.putLong(newValue);
+		return newData;
+	}
 
-    @VisibleForTesting
-    long bytesToValue(byte[] data)
-    {
-        if ( (data == null) || (data.length == 0) )
-        {
-            return 0;
-        }
-        ByteBuffer wrapper = ByteBuffer.wrap(data);
-        try
-        {
-            return wrapper.getLong();
-        }
-        catch ( BufferUnderflowException e )
-        {
-            throw value.createCorruptionException(data);
-        }
-        catch ( BufferOverflowException e )
-        {
-            throw value.createCorruptionException(data);
-        }
-    }
+	@VisibleForTesting
+	long bytesToValue(byte[] data)
+	{
+		if ( (data == null) || (data.length == 0) )
+		{
+			return 0;
+		}
+		ByteBuffer wrapper = ByteBuffer.wrap(data);
+		try
+		{
+			return wrapper.getLong();
+		}
+		catch ( BufferUnderflowException e )
+		{
+			throw value.createCorruptionException(data);
+		}
+		catch ( BufferOverflowException e )
+		{
+			throw value.createCorruptionException(data);
+		}
+	}
 
-    private AtomicValue<Long>   worker(final Long addAmount) throws Exception
-    {
-        Preconditions.checkNotNull(addAmount, "addAmount cannot be null");
+	private AtomicValue<Long>   worker(final Long addAmount) throws Exception
+	{
+		Preconditions.checkNotNull(addAmount, "addAmount cannot be null");
 
-        MakeValue               makeValue = new MakeValue()
-        {
-            @Override
-            public byte[] makeFrom(byte[] previous)
-            {
-                long        previousValue = (previous != null) ? bytesToValue(previous) : 0;
-                long        newValue = previousValue + addAmount;
-                return valueToBytes(newValue);
-            }
-        };
+		MakeValue               makeValue = new MakeValue()
+		{
+			@Override
+			public byte[] makeFrom(byte[] previous)
+			{
+				long        previousValue = (previous != null) ? bytesToValue(previous) : 0;
+				long        newValue = previousValue + addAmount;
+				return valueToBytes(newValue);
+			}
+		};
 
-        AtomicValue<byte[]>     result = value.trySet(makeValue);
-        return new AtomicLong(result);
-    }
+		AtomicValue<byte[]>     result = value.trySet(makeValue);
+		return new AtomicLong(result);
+	}
 
-    private class AtomicLong implements AtomicValue<Long>
-    {
-        private AtomicValue<byte[]> bytes;
+	private class AtomicLong implements AtomicValue<Long>
+	{
+		private AtomicValue<byte[]> bytes;
 
-        private AtomicLong(AtomicValue<byte[]> bytes)
-        {
-            this.bytes = bytes;
-        }
+		private AtomicLong(AtomicValue<byte[]> bytes)
+		{
+			this.bytes = bytes;
+		}
 
-        @Override
-        public boolean succeeded()
-        {
-            return bytes.succeeded();
-        }
+		@Override
+		public boolean succeeded()
+		{
+			return bytes.succeeded();
+		}
 
-        @Override
-        public Long preValue()
-        {
-            return bytesToValue(bytes.preValue());
-        }
+		@Override
+		public Long preValue()
+		{
+			return bytesToValue(bytes.preValue());
+		}
 
-        @Override
-        public Long postValue()
-        {
-            return bytesToValue(bytes.postValue());
-        }
+		@Override
+		public Long postValue()
+		{
+			return bytesToValue(bytes.postValue());
+		}
 
-        @Override
-        public AtomicStats getStats()
-        {
-            return bytes.getStats();
-        }
-    }
+		@Override
+		public AtomicStats getStats()
+		{
+			return bytes.getStats();
+		}
+	}
 }

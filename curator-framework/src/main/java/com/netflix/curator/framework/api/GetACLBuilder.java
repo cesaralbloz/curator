@@ -21,7 +21,7 @@ import org.apache.zookeeper.data.ACL;
 import java.util.List;
 
 public interface GetACLBuilder extends
-    BackgroundPathable<List<ACL>>,
-    Statable<Pathable<List<ACL>>>
+BackgroundPathable<List<ACL>>,
+Statable<Pathable<List<ACL>>>
 {
 }

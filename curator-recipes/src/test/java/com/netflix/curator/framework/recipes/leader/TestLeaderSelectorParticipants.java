@@ -34,138 +34,138 @@ import java.util.concurrent.TimeUnit;
 
 public class TestLeaderSelectorParticipants extends BaseClassForTests
 {
-    @Test
-    public void     testId() throws Exception
-    {
-        LeaderSelector          selector = null;
-        CuratorFramework        client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        try
-        {
-            client.start();
+	@Test
+	public void     testId() throws Exception
+	{
+		LeaderSelector          selector = null;
+		CuratorFramework        client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		try
+		{
+			client.start();
 
-            final CountDownLatch        latch = new CountDownLatch(1);
-            LeaderSelectorListener      listener = new LeaderSelectorListener()
-            {
-                @Override
-                public void takeLeadership(CuratorFramework client) throws Exception
-                {
-                    latch.countDown();
-                    Thread.currentThread().join();
-                }
+			final CountDownLatch        latch = new CountDownLatch(1);
+			LeaderSelectorListener      listener = new LeaderSelectorListener()
+			{
+				@Override
+				public void takeLeadership(CuratorFramework client) throws Exception
+				{
+					latch.countDown();
+					Thread.currentThread().join();
+				}
 
-                @Override
-                public void stateChanged(CuratorFramework client, ConnectionState newState)
-                {
-                }
-            };
-            selector = new LeaderSelector(client, "/ls", listener);
-            selector.setId("A is A");
-            selector.start();
+				@Override
+				public void stateChanged(CuratorFramework client, ConnectionState newState)
+				{
+				}
+			};
+			selector = new LeaderSelector(client, "/ls", listener);
+			selector.setId("A is A");
+			selector.start();
 
-            Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+			Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
 
-            Participant leader = selector.getLeader();
-            Assert.assertTrue(leader.isLeader());
-            Assert.assertEquals(leader.getId(), "A is A");
+			Participant leader = selector.getLeader();
+			Assert.assertTrue(leader.isLeader());
+			Assert.assertEquals(leader.getId(), "A is A");
 
-            Collection<Participant>     participants = selector.getParticipants();
-            Assert.assertEquals(participants.size(), 1);
-            Assert.assertEquals(participants.iterator().next().getId(), "A is A");
-            Assert.assertEquals(participants.iterator().next().getId(), selector.getId());
-        }
-        finally
-        {
-            Closeables.closeQuietly(selector);
-            Closeables.closeQuietly(client);
-        }
-    }
+			Collection<Participant>     participants = selector.getParticipants();
+			Assert.assertEquals(participants.size(), 1);
+			Assert.assertEquals(participants.iterator().next().getId(), "A is A");
+			Assert.assertEquals(participants.iterator().next().getId(), selector.getId());
+		}
+		finally
+		{
+			Closeables.closeQuietly(selector);
+			Closeables.closeQuietly(client);
+		}
+	}
 
-    @Test
-    public void     testBasic() throws Exception
-    {
-        final int           SELECTOR_QTY = 10;
+	@Test
+	public void     testBasic() throws Exception
+	{
+		final int           SELECTOR_QTY = 10;
 
-        List<LeaderSelector>    selectors = Lists.newArrayList();
-        CuratorFramework        client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        try
-        {
-            client.start();
+		List<LeaderSelector>    selectors = Lists.newArrayList();
+		CuratorFramework        client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		try
+		{
+			client.start();
 
-            final CountDownLatch            leaderLatch = new CountDownLatch(1);
-            final CountDownLatch            workingLatch = new CountDownLatch(SELECTOR_QTY);
-            LeaderSelectorListener          listener = new LeaderSelectorListener()
-            {
-                @Override
-                public void takeLeadership(CuratorFramework client) throws Exception
-                {
-                    leaderLatch.countDown();
-                    Thread.currentThread().join();
-                }
+			final CountDownLatch            leaderLatch = new CountDownLatch(1);
+			final CountDownLatch            workingLatch = new CountDownLatch(SELECTOR_QTY);
+			LeaderSelectorListener          listener = new LeaderSelectorListener()
+			{
+				@Override
+				public void takeLeadership(CuratorFramework client) throws Exception
+				{
+					leaderLatch.countDown();
+					Thread.currentThread().join();
+				}
 
-                @Override
-                public void stateChanged(CuratorFramework client, ConnectionState newState)
-                {
-                }
-            };
+				@Override
+				public void stateChanged(CuratorFramework client, ConnectionState newState)
+				{
+				}
+			};
 
-            for ( int i = 0; i < SELECTOR_QTY; ++i )
-            {
-                LeaderSelector      selector = new LeaderSelector(client, "/ls", listener)
-                {
-                    @Override
-                    void doWork() throws Exception
-                    {
-                        workingLatch.countDown();
-                        super.doWork();
-                    }
-                };
-                selector.setId(Integer.toString(i));
-                selectors.add(selector);
-            }
+			for ( int i = 0; i < SELECTOR_QTY; ++i )
+			{
+				LeaderSelector      selector = new LeaderSelector(client, "/ls", listener)
+				{
+					@Override
+					void doWork() throws Exception
+					{
+						workingLatch.countDown();
+						super.doWork();
+					}
+				};
+				selector.setId(Integer.toString(i));
+				selectors.add(selector);
+			}
 
-            for ( LeaderSelector selector : selectors )
-            {
-                selector.start();
-            }
+			for ( LeaderSelector selector : selectors )
+			{
+				selector.start();
+			}
 
-            Assert.assertTrue(leaderLatch.await(10, TimeUnit.SECONDS));
-            Assert.assertTrue(workingLatch.await(10, TimeUnit.SECONDS));
-            
-            Thread.sleep(1000); // some time for locks to acquire
+			Assert.assertTrue(leaderLatch.await(10, TimeUnit.SECONDS));
+			Assert.assertTrue(workingLatch.await(10, TimeUnit.SECONDS));
 
-            Collection<Participant>     participants = selectors.get(0).getParticipants();
-            for ( int i = 1; i < selectors.size(); ++i )
-            {
-                Assert.assertEquals(participants, selectors.get(i).getParticipants());
-            }
+			Thread.sleep(1000); // some time for locks to acquire
 
-            Set<String>                 ids = Sets.newHashSet();
-            int                         leaderCount = 0;
-            for ( Participant participant : participants )
-            {
-                if ( participant.isLeader() )
-                {
-                    ++leaderCount;
-                }
-                Assert.assertFalse(ids.contains(participant.getId()));
-                ids.add(participant.getId());
-            }
-            Assert.assertEquals(leaderCount, 1);
+			Collection<Participant>     participants = selectors.get(0).getParticipants();
+			for ( int i = 1; i < selectors.size(); ++i )
+			{
+				Assert.assertEquals(participants, selectors.get(i).getParticipants());
+			}
 
-            Set<String>                 expectedIds = Sets.newHashSet();
-            for ( int i = 0; i < SELECTOR_QTY; ++i )
-            {
-                expectedIds.add(Integer.toString(i));
-            }
-            Assert.assertEquals(expectedIds, ids);
-        }
-        finally
-        {
-            for ( LeaderSelector selector : selectors )
-            {
-                Closeables.closeQuietly(selector);
-            }
-            Closeables.closeQuietly(client);
-        }
-    }
+			Set<String>                 ids = Sets.newHashSet();
+			int                         leaderCount = 0;
+			for ( Participant participant : participants )
+			{
+				if ( participant.isLeader() )
+				{
+					++leaderCount;
+				}
+				Assert.assertFalse(ids.contains(participant.getId()));
+				ids.add(participant.getId());
+			}
+			Assert.assertEquals(leaderCount, 1);
+
+			Set<String>                 expectedIds = Sets.newHashSet();
+			for ( int i = 0; i < SELECTOR_QTY; ++i )
+			{
+				expectedIds.add(Integer.toString(i));
+			}
+			Assert.assertEquals(expectedIds, ids);
+		}
+		finally
+		{
+			for ( LeaderSelector selector : selectors )
+			{
+				Closeables.closeQuietly(selector);
+			}
+			Closeables.closeQuietly(client);
+		}
+	}
 }

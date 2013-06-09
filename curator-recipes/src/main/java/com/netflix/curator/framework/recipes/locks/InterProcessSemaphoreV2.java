@@ -68,282 +68,282 @@ import java.util.concurrent.TimeUnit;
  */
 public class InterProcessSemaphoreV2
 {
-    private final Logger                log = LoggerFactory.getLogger(getClass());
-    private final InterProcessMutex     lock;
-    private final CuratorFramework      client;
-    private final String                leasesPath;
-    private final Watcher               watcher = new Watcher()
-    {
-        @Override
-        public void process(WatchedEvent event)
-        {
-            notifyFromWatcher();
-        }
-    };
+	private final Logger                log = LoggerFactory.getLogger(getClass());
+	private final InterProcessMutex     lock;
+	private final CuratorFramework      client;
+	private final String                leasesPath;
+	private final Watcher               watcher = new Watcher()
+	{
+		@Override
+		public void process(WatchedEvent event)
+		{
+			notifyFromWatcher();
+		}
+	};
 
-    private volatile int                maxLeases;
+	private volatile int                maxLeases;
 
-    private static final String     LOCK_PARENT = "locks";
-    private static final String     LEASE_PARENT = "leases";
-    private static final String     LEASE_BASE_NAME = "lease-";
+	private static final String     LOCK_PARENT = "locks";
+	private static final String     LEASE_PARENT = "leases";
+	private static final String     LEASE_BASE_NAME = "lease-";
 
-    /**
-     * @param client the client
-     * @param path path for the semaphore
-     * @param maxLeases the max number of leases to allow for this instance
-     */
-    public InterProcessSemaphoreV2(CuratorFramework client, String path, int maxLeases)
-    {
-        this(client, path, maxLeases, null);
-    }
+	/**
+	 * @param client the client
+	 * @param path path for the semaphore
+	 * @param maxLeases the max number of leases to allow for this instance
+	 */
+	public InterProcessSemaphoreV2(CuratorFramework client, String path, int maxLeases)
+	{
+		this(client, path, maxLeases, null);
+	}
 
-    /**
-     * @param client the client
-     * @param path path for the semaphore
-     * @param count the shared count to use for the max leases
-     */
-    public InterProcessSemaphoreV2(CuratorFramework client, String path, SharedCountReader count)
-    {
-        this(client, path, 0, count);
-    }
+	/**
+	 * @param client the client
+	 * @param path path for the semaphore
+	 * @param count the shared count to use for the max leases
+	 */
+	public InterProcessSemaphoreV2(CuratorFramework client, String path, SharedCountReader count)
+	{
+		this(client, path, 0, count);
+	}
 
-    private InterProcessSemaphoreV2(CuratorFramework client, String path, int maxLeases, SharedCountReader count)
-    {
-        this.client = client;
-        lock = new InterProcessMutex(client, ZKPaths.makePath(path, LOCK_PARENT));
-        this.maxLeases = (count != null) ? count.getCount() : maxLeases;
-        leasesPath = ZKPaths.makePath(path, LEASE_PARENT);
+	private InterProcessSemaphoreV2(CuratorFramework client, String path, int maxLeases, SharedCountReader count)
+	{
+		this.client = client;
+		lock = new InterProcessMutex(client, ZKPaths.makePath(path, LOCK_PARENT));
+		this.maxLeases = (count != null) ? count.getCount() : maxLeases;
+		leasesPath = ZKPaths.makePath(path, LEASE_PARENT);
 
-        if ( count != null )
-        {
-            count.addListener
-            (
-                new SharedCountListener()
-                {
-                    @Override
-                    public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception
-                    {
-                        InterProcessSemaphoreV2.this.maxLeases = newCount;
-                    }
+		if ( count != null )
+		{
+			count.addListener
+			(
+					new SharedCountListener()
+					{
+						@Override
+						public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception
+						{
+							InterProcessSemaphoreV2.this.maxLeases = newCount;
+						}
 
-                    @Override
-                    public void stateChanged(CuratorFramework client, ConnectionState newState)
-                    {
-                        // no need to handle this here - clients should set their own connection state listener
-                    }
-                }
-            );
-        }
-    }
+						@Override
+						public void stateChanged(CuratorFramework client, ConnectionState newState)
+						{
+							// no need to handle this here - clients should set their own connection state listener
+						}
+					}
+					);
+		}
+	}
 
-    /**
-     * Convenience method. Closes all leases in the given collection of leases
-     *
-     * @param leases leases to close
-     */
-    public void     returnAll(Collection<Lease> leases)
-    {
-        for ( Lease l : leases )
-        {
-            Closeables.closeQuietly(l);
-        }
-    }
+	/**
+	 * Convenience method. Closes all leases in the given collection of leases
+	 *
+	 * @param leases leases to close
+	 */
+	public void     returnAll(Collection<Lease> leases)
+	{
+		for ( Lease l : leases )
+		{
+			Closeables.closeQuietly(l);
+		}
+	}
 
-    /**
-     * Convenience method. Closes the lease
-     *
-     * @param lease lease to close
-     */
-    public void     returnLease(Lease lease)
-    {
-        Closeables.closeQuietly(lease);
-    }
+	/**
+	 * Convenience method. Closes the lease
+	 *
+	 * @param lease lease to close
+	 */
+	public void     returnLease(Lease lease)
+	{
+		Closeables.closeQuietly(lease);
+	}
 
-    /**
-     * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
-     * number of leases is increased or another client/process closes a lease.</p>
-     *
-     * <p>The client must close the lease when it is done with it. You should do this in a
-     * <code>finally</code> block.</p>
-     *
-     * @return the new lease
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Lease acquire() throws Exception
-    {
-        Collection<Lease> leases = acquire(1, 0, null);
-        return leases.iterator().next();
-    }
+	/**
+	 * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
+	 * number of leases is increased or another client/process closes a lease.</p>
+	 *
+	 * <p>The client must close the lease when it is done with it. You should do this in a
+	 * <code>finally</code> block.</p>
+	 *
+	 * @return the new lease
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Lease acquire() throws Exception
+	{
+		Collection<Lease> leases = acquire(1, 0, null);
+		return leases.iterator().next();
+	}
 
-    /**
-     * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
-     * blocks until either the maximum number of leases is increased enough or other clients/processes
-     * close enough leases.</p>
-     *
-     * <p>The client must close the leases when it is done with them. You should do this in a
-     * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
-     *
-     * @param qty number of leases to acquire
-     * @return the new leases
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Collection<Lease> acquire(int qty) throws Exception
-    {
-        return acquire(qty, 0, null);
-    }
+	/**
+	 * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
+	 * blocks until either the maximum number of leases is increased enough or other clients/processes
+	 * close enough leases.</p>
+	 *
+	 * <p>The client must close the leases when it is done with them. You should do this in a
+	 * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
+	 *
+	 * @param qty number of leases to acquire
+	 * @return the new leases
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Collection<Lease> acquire(int qty) throws Exception
+	{
+		return acquire(qty, 0, null);
+	}
 
-    /**
-     * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
-     * number of leases is increased or another client/process closes a lease. However, this method
-     * will only block to a maximum of the time parameters given.</p>
-     *
-     * <p>The client must close the lease when it is done with it. You should do this in a
-     * <code>finally</code> block.</p>
-     *
-     * @param time time to wait
-     * @param unit time unit
-     * @return the new lease or null if time ran out
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Lease acquire(long time, TimeUnit unit) throws Exception
-    {
-        Collection<Lease> leases = acquire(1, time, unit);
-        return (leases != null) ? leases.iterator().next() : null;
-    }
+	/**
+	 * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
+	 * number of leases is increased or another client/process closes a lease. However, this method
+	 * will only block to a maximum of the time parameters given.</p>
+	 *
+	 * <p>The client must close the lease when it is done with it. You should do this in a
+	 * <code>finally</code> block.</p>
+	 *
+	 * @param time time to wait
+	 * @param unit time unit
+	 * @return the new lease or null if time ran out
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Lease acquire(long time, TimeUnit unit) throws Exception
+	{
+		Collection<Lease> leases = acquire(1, time, unit);
+		return (leases != null) ? leases.iterator().next() : null;
+	}
 
-    /**
-     * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
-     * blocks until either the maximum number of leases is increased enough or other clients/processes
-     * close enough leases. However, this method will only block to a maximum of the time
-     * parameters given. If time expires before all leases are acquired, the subset of acquired
-     * leases are automatically closed.</p>
-     *
-     * <p>The client must close the leases when it is done with them. You should do this in a
-     * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
-     *
-     * @param qty number of leases to acquire
-     * @param time time to wait
-     * @param unit time unit
-     * @return the new leases or null if time ran out
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Collection<Lease> acquire(int qty, long time, TimeUnit unit) throws Exception
-    {
-        long                startMs = System.currentTimeMillis();
-        boolean             hasWait = (unit != null);
-        long                waitMs = hasWait ? TimeUnit.MILLISECONDS.convert(time, unit) : 0;
+	/**
+	 * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
+	 * blocks until either the maximum number of leases is increased enough or other clients/processes
+	 * close enough leases. However, this method will only block to a maximum of the time
+	 * parameters given. If time expires before all leases are acquired, the subset of acquired
+	 * leases are automatically closed.</p>
+	 *
+	 * <p>The client must close the leases when it is done with them. You should do this in a
+	 * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
+	 *
+	 * @param qty number of leases to acquire
+	 * @param time time to wait
+	 * @param unit time unit
+	 * @return the new leases or null if time ran out
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Collection<Lease> acquire(int qty, long time, TimeUnit unit) throws Exception
+	{
+		long                startMs = System.currentTimeMillis();
+		boolean             hasWait = (unit != null);
+		long                waitMs = hasWait ? TimeUnit.MILLISECONDS.convert(time, unit) : 0;
 
-        Preconditions.checkArgument(qty > 0, "qty cannot be 0");
+		Preconditions.checkArgument(qty > 0, "qty cannot be 0");
 
-        ImmutableList.Builder<Lease>    builder = ImmutableList.builder();
-        boolean                         success = false;
-        try
-        {
-            while ( qty-- > 0 )
-            {
-                if ( !client.isStarted() )
-                {
-                    return null;
-                }
+		ImmutableList.Builder<Lease>    builder = ImmutableList.builder();
+		boolean                         success = false;
+		try
+		{
+			while ( qty-- > 0 )
+			{
+				if ( !client.isStarted() )
+				{
+					return null;
+				}
 
-                if ( hasWait )
-                {
-                    long    thisWaitMs = getThisWaitMs(startMs, waitMs);
-                    if ( !lock.acquire(thisWaitMs, TimeUnit.MILLISECONDS) )
-                    {
-                        return null;
-                    }
-                }
-                else
-                {
-                    lock.acquire();
-                }
-                try
-                {
-                    String          path = client.create().creatingParentsIfNeeded().withProtection().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(ZKPaths.makePath(leasesPath, LEASE_BASE_NAME));
-                    String          nodeName = ZKPaths.getNodeFromPath(path);
-                    builder.add(makeLease(path));
+				if ( hasWait )
+				{
+					long    thisWaitMs = getThisWaitMs(startMs, waitMs);
+					if ( !lock.acquire(thisWaitMs, TimeUnit.MILLISECONDS) )
+					{
+						return null;
+					}
+				}
+				else
+				{
+					lock.acquire();
+				}
+				try
+				{
+					String          path = client.create().creatingParentsIfNeeded().withProtection().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(ZKPaths.makePath(leasesPath, LEASE_BASE_NAME));
+					String          nodeName = ZKPaths.getNodeFromPath(path);
+					builder.add(makeLease(path));
 
-                    synchronized(this)
-                    {
-                        for(;;)
-                        {
-                            List<String>    children = client.getChildren().usingWatcher(watcher).forPath(leasesPath);
-                            if ( !children.contains(nodeName) )
-                            {
-                                log.error("Sequential path not found: " + path);
-                                throw new KeeperException.NoNodeException("Sequential path not found: " + path);
-                            }
+					synchronized(this)
+					{
+						for(;;)
+						{
+							List<String>    children = client.getChildren().usingWatcher(watcher).forPath(leasesPath);
+							if ( !children.contains(nodeName) )
+							{
+								log.error("Sequential path not found: " + path);
+								throw new KeeperException.NoNodeException("Sequential path not found: " + path);
+							}
 
-                            if ( children.size() <= maxLeases )
-                            {
-                                break;
-                            }
-                            if ( hasWait )
-                            {
-                                long    thisWaitMs = getThisWaitMs(startMs, waitMs);
-                                if ( thisWaitMs <= 0 )
-                                {
-                                    return null;
-                                }
-                                wait(thisWaitMs);
-                            }
-                            else
-                            {
-                                wait();
-                            }
-                        }
-                    }
-                }
-                finally
-                {
-                    lock.release();
-                }
-            }
-            success = true;
-        }
-        finally
-        {
-            if ( !success )
-            {
-                returnAll(builder.build());
-            }
-        }
+							if ( children.size() <= maxLeases )
+							{
+								break;
+							}
+							if ( hasWait )
+							{
+								long    thisWaitMs = getThisWaitMs(startMs, waitMs);
+								if ( thisWaitMs <= 0 )
+								{
+									return null;
+								}
+								wait(thisWaitMs);
+							}
+							else
+							{
+								wait();
+							}
+						}
+					}
+				}
+				finally
+				{
+					lock.release();
+				}
+			}
+			success = true;
+		}
+		finally
+		{
+			if ( !success )
+			{
+				returnAll(builder.build());
+			}
+		}
 
-        return builder.build();
-    }
+		return builder.build();
+	}
 
-    private long getThisWaitMs(long startMs, long waitMs)
-    {
-        long        elapsedMs = System.currentTimeMillis() - startMs;
-        return waitMs - elapsedMs;
-    }
+	private long getThisWaitMs(long startMs, long waitMs)
+	{
+		long        elapsedMs = System.currentTimeMillis() - startMs;
+		return waitMs - elapsedMs;
+	}
 
-    private Lease makeLease(final String path)
-    {
-        return new Lease()
-        {
-            @Override
-            public void close() throws IOException
-            {
-                try
-                {
-                    client.delete().guaranteed().forPath(path);
-                }
-                catch ( KeeperException.NoNodeException e )
-                {
-                    log.warn("Lease already released", e);
-                }
-                catch ( Exception e )
-                {
-                    throw new IOException(e);
-                }
-            }
-        };
-    }
+	private Lease makeLease(final String path)
+	{
+		return new Lease()
+		{
+			@Override
+			public void close() throws IOException
+			{
+				try
+				{
+					client.delete().guaranteed().forPath(path);
+				}
+				catch ( KeeperException.NoNodeException e )
+				{
+					log.warn("Lease already released", e);
+				}
+				catch ( Exception e )
+				{
+					throw new IOException(e);
+				}
+			}
+		};
+	}
 
-    private synchronized void notifyFromWatcher()
-    {
-        notifyAll();
-    }
+	private synchronized void notifyFromWatcher()
+	{
+		notifyAll();
+	}
 }

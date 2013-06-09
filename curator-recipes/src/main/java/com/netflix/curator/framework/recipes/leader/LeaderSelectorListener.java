@@ -25,12 +25,12 @@ import com.netflix.curator.framework.state.ConnectionStateListener;
  */
 public interface LeaderSelectorListener extends ConnectionStateListener
 {
-    /**
-     * Called when your instance has been granted leadership. This method
-     * should not return until you wish to release leadership
-     *
-     * @param client the client
-     * @throws Exception any errors
-     */
-    public void         takeLeadership(CuratorFramework client) throws Exception;
+	/**
+	 * Called when your instance has been granted leadership. This method
+	 * should not return until you wish to release leadership
+	 *
+	 * @param client the client
+	 * @throws Exception any errors
+	 */
+	public void         takeLeadership(CuratorFramework client) throws Exception;
 }

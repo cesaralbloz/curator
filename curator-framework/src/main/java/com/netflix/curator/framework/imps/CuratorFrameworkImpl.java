@@ -418,7 +418,6 @@ public class CuratorFrameworkImpl implements CuratorFramework
         return compressionProvider;
     }
 
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     <DATA_TYPE> void processBackgroundOperation(OperationAndData<DATA_TYPE> operationAndData, CuratorEvent event)
     {
         boolean     isInitialExecution = (event == null);

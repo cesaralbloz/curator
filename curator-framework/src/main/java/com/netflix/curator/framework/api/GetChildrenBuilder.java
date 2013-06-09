@@ -20,8 +20,8 @@ package com.netflix.curator.framework.api;
 import java.util.List;
 
 public interface GetChildrenBuilder extends
-    Watchable<BackgroundPathable<List<String>>>,
-    BackgroundPathable<List<String>>,
-    Statable<WatchPathable<List<String>>>
+Watchable<BackgroundPathable<List<String>>>,
+BackgroundPathable<List<String>>,
+Statable<WatchPathable<List<String>>>
 {
 }

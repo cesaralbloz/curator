@@ -18,7 +18,7 @@
 package com.netflix.curator.framework.api;
 
 public interface ACLBackgroundPathAndBytesable<T> extends
-    ACLable<BackgroundPathAndBytesable<T>>,
-    BackgroundPathAndBytesable<T>
+ACLable<BackgroundPathAndBytesable<T>>,
+BackgroundPathAndBytesable<T>
 {
 }

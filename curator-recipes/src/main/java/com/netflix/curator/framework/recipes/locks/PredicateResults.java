@@ -18,22 +18,22 @@ package com.netflix.curator.framework.recipes.locks;
 
 class PredicateResults
 {
-    private final boolean   getsTheLock;
-    private final String    pathToWatch;
+	private final boolean   getsTheLock;
+	private final String    pathToWatch;
 
-    PredicateResults(String pathToWatch, boolean getsTheLock)
-    {
-        this.pathToWatch = pathToWatch;
-        this.getsTheLock = getsTheLock;
-    }
+	PredicateResults(String pathToWatch, boolean getsTheLock)
+	{
+		this.pathToWatch = pathToWatch;
+		this.getsTheLock = getsTheLock;
+	}
 
-    String getPathToWatch()
-    {
-        return pathToWatch;
-    }
+	String getPathToWatch()
+	{
+		return pathToWatch;
+	}
 
-    boolean getsTheLock()
-    {
-        return getsTheLock;
-    }
+	boolean getsTheLock()
+	{
+		return getsTheLock;
+	}
 }

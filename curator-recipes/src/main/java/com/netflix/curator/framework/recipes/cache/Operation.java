@@ -18,5 +18,5 @@ package com.netflix.curator.framework.recipes.cache;
 
 interface Operation
 {
-    public void     invoke() throws Exception;
+	public void     invoke() throws Exception;
 }

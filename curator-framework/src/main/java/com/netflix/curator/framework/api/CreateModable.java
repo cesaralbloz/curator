@@ -21,11 +21,11 @@ import org.apache.zookeeper.CreateMode;
 
 public interface CreateModable<T>
 {
-    /**
-     * Set a create mode - the default is {@link CreateMode#PERSISTENT}
-     *
-     * @param mode new create mode
-     * @return this
-     */
-    public T withMode(CreateMode mode);
+	/**
+	 * Set a create mode - the default is {@link CreateMode#PERSISTENT}
+	 *
+	 * @param mode new create mode
+	 * @return this
+	 */
+	public T withMode(CreateMode mode);
 }

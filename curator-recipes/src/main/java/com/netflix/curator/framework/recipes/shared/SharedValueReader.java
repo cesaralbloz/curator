@@ -23,17 +23,17 @@ import com.netflix.curator.framework.listen.ListenerContainer;
  */
 public interface SharedValueReader
 {
-    /**
-     * Return the current value of the count
-     *
-     * @return count
-     */
-    public byte[]   getValue();
+	/**
+	 * Return the current value of the count
+	 *
+	 * @return count
+	 */
+	public byte[]   getValue();
 
-    /**
-     * Returns the listenable
-     *
-     * @return listenable
-     */
-    public ListenerContainer<SharedValueListener> getListenable();
+	/**
+	 * Returns the listenable
+	 *
+	 * @return listenable
+	 */
+	public ListenerContainer<SharedValueListener> getListenable();
 }

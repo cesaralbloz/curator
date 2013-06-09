@@ -18,55 +18,55 @@ package com.netflix.curator.framework.recipes.cache;
 
 class GetDataOperation implements Operation
 {
-    private final PathChildrenCache cache;
-    private final String fullPath;
+	private final PathChildrenCache cache;
+	private final String fullPath;
 
-    GetDataOperation(PathChildrenCache cache, String fullPath)
-    {
-        this.cache = cache;
-        this.fullPath = fullPath;
-    }
+	GetDataOperation(PathChildrenCache cache, String fullPath)
+	{
+		this.cache = cache;
+		this.fullPath = fullPath;
+	}
 
-    @Override
-    public void invoke() throws Exception
-    {
-        cache.getDataAndStat(fullPath);
-    }
+	@Override
+	public void invoke() throws Exception
+	{
+		cache.getDataAndStat(fullPath);
+	}
 
-    @Override
-    public boolean equals(Object o)
-    {
-        if ( this == o )
-        {
-            return true;
-        }
-        if ( o == null || getClass() != o.getClass() )
-        {
-            return false;
-        }
+	@Override
+	public boolean equals(Object o)
+	{
+		if ( this == o )
+		{
+			return true;
+		}
+		if ( o == null || getClass() != o.getClass() )
+		{
+			return false;
+		}
 
-        GetDataOperation that = (GetDataOperation)o;
+		GetDataOperation that = (GetDataOperation)o;
 
-        //noinspection RedundantIfStatement
-        if ( !fullPath.equals(that.fullPath) )
-        {
-            return false;
-        }
+		//noinspection RedundantIfStatement
+		if ( !fullPath.equals(that.fullPath) )
+		{
+			return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    public int hashCode()
-    {
-        return fullPath.hashCode();
-    }
+	@Override
+	public int hashCode()
+	{
+		return fullPath.hashCode();
+	}
 
-    @Override
-    public String toString()
-    {
-        return "GetDataOperation{" +
-            "fullPath='" + fullPath + '\'' +
-            '}';
-    }
+	@Override
+	public String toString()
+	{
+		return "GetDataOperation{" +
+				"fullPath='" + fullPath + '\'' +
+				'}';
+	}
 }

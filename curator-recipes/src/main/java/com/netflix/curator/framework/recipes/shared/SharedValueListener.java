@@ -23,12 +23,12 @@ import com.netflix.curator.framework.state.ConnectionStateListener;
  */
 public interface SharedValueListener extends ConnectionStateListener
 {
-    /**
-     * Called when the shared value has changed
-     *
-     * @param sharedValue the shared value instance
-     * @param newValue the new value
-     * @throws Exception errors
-     */
-    public void valueHasChanged(SharedValueReader sharedValue, byte[] newValue) throws Exception;
+	/**
+	 * Called when the shared value has changed
+	 *
+	 * @param sharedValue the shared value instance
+	 * @param newValue the new value
+	 * @throws Exception errors
+	 */
+	public void valueHasChanged(SharedValueReader sharedValue, byte[] newValue) throws Exception;
 }

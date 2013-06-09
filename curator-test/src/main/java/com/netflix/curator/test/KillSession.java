@@ -39,84 +39,84 @@ import java.util.concurrent.TimeUnit;
  */
 public class KillSession
 {
-    /**
-     * Kill the given ZK session
-     *
-     * @param client the client to kill
-     * @param connectString server connection string
-     * @throws Exception errors
-     */
-    public static void     kill(ZooKeeper client, String connectString) throws Exception
-    {
-        kill(client, connectString, new Timing().forWaiting().milliseconds());
-    }
+	/**
+	 * Kill the given ZK session
+	 *
+	 * @param client the client to kill
+	 * @param connectString server connection string
+	 * @throws Exception errors
+	 */
+	public static void     kill(ZooKeeper client, String connectString) throws Exception
+	{
+		kill(client, connectString, new Timing().forWaiting().milliseconds());
+	}
 
-    /**
-     * Kill the given ZK session
-     *
-     * @param client the client to kill
-     * @param connectString server connection string
-     * @param maxMs max time ms to wait for kill
-     * @throws Exception errors
-     */
-    public static void     kill(ZooKeeper client, String connectString, int maxMs) throws Exception
-    {
-        long                    startTicks = System.currentTimeMillis();
+	/**
+	 * Kill the given ZK session
+	 *
+	 * @param client the client to kill
+	 * @param connectString server connection string
+	 * @param maxMs max time ms to wait for kill
+	 * @throws Exception errors
+	 */
+	public static void     kill(ZooKeeper client, String connectString, int maxMs) throws Exception
+	{
+		long                    startTicks = System.currentTimeMillis();
 
-        final CountDownLatch    sessionLostLatch = new CountDownLatch(1);
-        Watcher                 sessionLostWatch = new Watcher()
-        {
-            @Override
-            public void process(WatchedEvent event)
-            {
-                sessionLostLatch.countDown();
-            }
-        };
-        client.exists("/___CURATOR_KILL_SESSION___" + System.nanoTime(), sessionLostWatch);
+		final CountDownLatch    sessionLostLatch = new CountDownLatch(1);
+		Watcher                 sessionLostWatch = new Watcher()
+		{
+			@Override
+			public void process(WatchedEvent event)
+			{
+				sessionLostLatch.countDown();
+			}
+		};
+		client.exists("/___CURATOR_KILL_SESSION___" + System.nanoTime(), sessionLostWatch);
 
-        final CountDownLatch    connectionLatch = new CountDownLatch(1);
-        Watcher                 connectionWatcher = new Watcher()
-        {
-            @Override
-            public void process(WatchedEvent event)
-            {
-                if ( event.getState() == Event.KeeperState.SyncConnected )
-                {
-                    connectionLatch.countDown();
-                }
-            }
-        };
-        ZooKeeper zk = new ZooKeeper(connectString, maxMs, connectionWatcher, client.getSessionId(), client.getSessionPasswd());
-        try
-        {
-            if ( !connectionLatch.await(maxMs, TimeUnit.MILLISECONDS) )
-            {
-                throw new Exception("KillSession could not establish duplicate session");
-            }
-            try
-            {
-                zk.close();
-            }
-            finally
-            {
-                zk = null;
-            }
+		final CountDownLatch    connectionLatch = new CountDownLatch(1);
+		Watcher                 connectionWatcher = new Watcher()
+		{
+			@Override
+			public void process(WatchedEvent event)
+			{
+				if ( event.getState() == Event.KeeperState.SyncConnected )
+				{
+					connectionLatch.countDown();
+				}
+			}
+		};
+		ZooKeeper zk = new ZooKeeper(connectString, maxMs, connectionWatcher, client.getSessionId(), client.getSessionPasswd());
+		try
+		{
+			if ( !connectionLatch.await(maxMs, TimeUnit.MILLISECONDS) )
+			{
+				throw new Exception("KillSession could not establish duplicate session");
+			}
+			try
+			{
+				zk.close();
+			}
+			finally
+			{
+				zk = null;
+			}
 
-            while ( client.getState().isConnected() && !sessionLostLatch.await(100, TimeUnit.MILLISECONDS) )
-            {
-                long        elapsed = System.currentTimeMillis() - startTicks;
-                if ( elapsed > maxMs )
-                {
-                    throw new Exception("KillSession timed out waiting for session to expire");
-                }
-            }
-        }
-        finally
-        {
-            if ( zk != null )
-            {
-                zk.close();
-            }
-        }
-    }
+			while ( client.getState().isConnected() && !sessionLostLatch.await(100, TimeUnit.MILLISECONDS) )
+			{
+				long        elapsed = System.currentTimeMillis() - startTicks;
+				if ( elapsed > maxMs )
+				{
+					throw new Exception("KillSession timed out waiting for session to expire");
+				}
+			}
+		}
+		finally
+		{
+			if ( zk != null )
+			{
+				zk.close();
+			}
+		}
+	}
 }

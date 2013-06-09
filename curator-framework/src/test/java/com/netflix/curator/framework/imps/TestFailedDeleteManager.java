@@ -36,250 +36,250 @@ import java.util.concurrent.Semaphore;
 
 public class TestFailedDeleteManager extends BaseClassForTests
 {
-    @Test
-    public void     testLostSession() throws Exception
-    {
-        Timing                  timing = new Timing();
-        CuratorFramework        client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new ExponentialBackoffRetry(100, 3));
-        try
-        {
-            client.start();
+	@Test
+	public void     testLostSession() throws Exception
+	{
+		Timing                  timing = new Timing();
+		CuratorFramework        client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new ExponentialBackoffRetry(100, 3));
+		try
+		{
+			client.start();
 
-            client.create().forPath("/test-me");
+			client.create().forPath("/test-me");
 
-            final CountDownLatch            latch = new CountDownLatch(1);
-            final Semaphore                 semaphore = new Semaphore(0);
-            ConnectionStateListener         listener = new ConnectionStateListener()
-            {
-                @Override
-                public void stateChanged(CuratorFramework client, ConnectionState newState)
-                {
-                    if ( (newState == ConnectionState.LOST) || (newState == ConnectionState.SUSPENDED) )
-                    {
-                        semaphore.release();
-                    }
-                    else if ( newState == ConnectionState.RECONNECTED )
-                    {
-                        latch.countDown();
-                    }
-                }
-            };
-            client.getConnectionStateListenable().addListener(listener);
-            server.stop();
+			final CountDownLatch            latch = new CountDownLatch(1);
+			final Semaphore                 semaphore = new Semaphore(0);
+			ConnectionStateListener         listener = new ConnectionStateListener()
+			{
+				@Override
+				public void stateChanged(CuratorFramework client, ConnectionState newState)
+				{
+					if ( (newState == ConnectionState.LOST) || (newState == ConnectionState.SUSPENDED) )
+					{
+						semaphore.release();
+					}
+					else if ( newState == ConnectionState.RECONNECTED )
+					{
+						latch.countDown();
+					}
+				}
+			};
+			client.getConnectionStateListenable().addListener(listener);
+			server.stop();
 
-            Assert.assertTrue(timing.acquireSemaphore(semaphore));
-            try
-            {
-                client.delete().guaranteed().forPath("/test-me");
-                Assert.fail();
-            }
-            catch ( KeeperException.ConnectionLossException e )
-            {
-                // expected
-            }
-            Assert.assertTrue(timing.acquireSemaphore(semaphore));
+			Assert.assertTrue(timing.acquireSemaphore(semaphore));
+			try
+			{
+				client.delete().guaranteed().forPath("/test-me");
+				Assert.fail();
+			}
+			catch ( KeeperException.ConnectionLossException e )
+			{
+				// expected
+			}
+			Assert.assertTrue(timing.acquireSemaphore(semaphore));
 
-            timing.sleepABit();
+			timing.sleepABit();
 
-            server = new TestingServer(server.getPort(), server.getTempDirectory());
-            Assert.assertTrue(timing.awaitLatch(latch));
+			server = new TestingServer(server.getPort(), server.getTempDirectory());
+			Assert.assertTrue(timing.awaitLatch(latch));
 
-            timing.sleepABit();
+			timing.sleepABit();
 
-            Assert.assertNull(client.checkExists().forPath("/test-me"));
-        }
-        finally
-        {
-            Closeables.closeQuietly(client);
-        }
-    }
+			Assert.assertNull(client.checkExists().forPath("/test-me"));
+		}
+		finally
+		{
+			Closeables.closeQuietly(client);
+		}
+	}
 
-    @Test
-    public void     testWithNamespaceAndLostSession() throws Exception
-    {
-        Timing                  timing = new Timing();
-        CuratorFramework        client = CuratorFrameworkFactory.builder().connectString(server.getConnectString())
-            .sessionTimeoutMs(timing.session())
-            .connectionTimeoutMs(timing.connection())
-            .retryPolicy(new ExponentialBackoffRetry(100, 3))
-            .namespace("aisa")
-            .build();
-        try
-        {
-            client.start();
+	@Test
+	public void     testWithNamespaceAndLostSession() throws Exception
+	{
+		Timing                  timing = new Timing();
+		CuratorFramework        client = CuratorFrameworkFactory.builder().connectString(server.getConnectString())
+				.sessionTimeoutMs(timing.session())
+				.connectionTimeoutMs(timing.connection())
+				.retryPolicy(new ExponentialBackoffRetry(100, 3))
+				.namespace("aisa")
+				.build();
+		try
+		{
+			client.start();
 
-            client.create().forPath("/test-me");
+			client.create().forPath("/test-me");
 
-            final CountDownLatch            latch = new CountDownLatch(1);
-            final Semaphore                 semaphore = new Semaphore(0);
-            ConnectionStateListener         listener = new ConnectionStateListener()
-            {
-                @Override
-                public void stateChanged(CuratorFramework client, ConnectionState newState)
-                {
-                    if ( (newState == ConnectionState.LOST) || (newState == ConnectionState.SUSPENDED) )
-                    {
-                        semaphore.release();
-                    }
-                    else if ( newState == ConnectionState.RECONNECTED )
-                    {
-                        latch.countDown();
-                    }
-                }
-            };
-            client.getConnectionStateListenable().addListener(listener);
-            server.stop();
+			final CountDownLatch            latch = new CountDownLatch(1);
+			final Semaphore                 semaphore = new Semaphore(0);
+			ConnectionStateListener         listener = new ConnectionStateListener()
+			{
+				@Override
+				public void stateChanged(CuratorFramework client, ConnectionState newState)
+				{
+					if ( (newState == ConnectionState.LOST) || (newState == ConnectionState.SUSPENDED) )
+					{
+						semaphore.release();
+					}
+					else if ( newState == ConnectionState.RECONNECTED )
+					{
+						latch.countDown();
+					}
+				}
+			};
+			client.getConnectionStateListenable().addListener(listener);
+			server.stop();
 
-            Assert.assertTrue(timing.acquireSemaphore(semaphore));
-            try
-            {
-                client.delete().guaranteed().forPath("/test-me");
-                Assert.fail();
-            }
-            catch ( KeeperException.ConnectionLossException e )
-            {
-                // expected
-            }
-            Assert.assertTrue(timing.acquireSemaphore(semaphore));
+			Assert.assertTrue(timing.acquireSemaphore(semaphore));
+			try
+			{
+				client.delete().guaranteed().forPath("/test-me");
+				Assert.fail();
+			}
+			catch ( KeeperException.ConnectionLossException e )
+			{
+				// expected
+			}
+			Assert.assertTrue(timing.acquireSemaphore(semaphore));
 
-            timing.sleepABit();
+			timing.sleepABit();
 
-            server = new TestingServer(server.getPort(), server.getTempDirectory());
-            Assert.assertTrue(timing.awaitLatch(latch));
+			server = new TestingServer(server.getPort(), server.getTempDirectory());
+			Assert.assertTrue(timing.awaitLatch(latch));
 
-            timing.sleepABit();
+			timing.sleepABit();
 
-            Assert.assertNull(client.checkExists().forPath("/test-me"));
-        }
-        finally
-        {
-            Closeables.closeQuietly(client);
-        }
-    }
+			Assert.assertNull(client.checkExists().forPath("/test-me"));
+		}
+		finally
+		{
+			Closeables.closeQuietly(client);
+		}
+	}
 
-    @Test
-    public void     testWithNamespaceAndLostSessionAlt() throws Exception
-    {
-        Timing                  timing = new Timing();
-        CuratorFramework        client = CuratorFrameworkFactory.builder().connectString(server.getConnectString())
-            .sessionTimeoutMs(timing.session())
-            .connectionTimeoutMs(timing.connection())
-            .retryPolicy(new ExponentialBackoffRetry(100, 3))
-            .build();
-        try
-        {
-            client.start();
+	@Test
+	public void     testWithNamespaceAndLostSessionAlt() throws Exception
+	{
+		Timing                  timing = new Timing();
+		CuratorFramework        client = CuratorFrameworkFactory.builder().connectString(server.getConnectString())
+				.sessionTimeoutMs(timing.session())
+				.connectionTimeoutMs(timing.connection())
+				.retryPolicy(new ExponentialBackoffRetry(100, 3))
+				.build();
+		try
+		{
+			client.start();
 
-            CuratorFramework        namespaceClient = client.usingNamespace("foo");
-            namespaceClient.create().forPath("/test-me");
+			CuratorFramework        namespaceClient = client.usingNamespace("foo");
+			namespaceClient.create().forPath("/test-me");
 
-            final CountDownLatch            latch = new CountDownLatch(1);
-            final Semaphore                 semaphore = new Semaphore(0);
-            ConnectionStateListener         listener = new ConnectionStateListener()
-            {
-                @Override
-                public void stateChanged(CuratorFramework client, ConnectionState newState)
-                {
-                    if ( (newState == ConnectionState.LOST) || (newState == ConnectionState.SUSPENDED) )
-                    {
-                        semaphore.release();
-                    }
-                    else if ( newState == ConnectionState.RECONNECTED )
-                    {
-                        latch.countDown();
-                    }
-                }
-            };
-            namespaceClient.getConnectionStateListenable().addListener(listener);
-            server.stop();
+			final CountDownLatch            latch = new CountDownLatch(1);
+			final Semaphore                 semaphore = new Semaphore(0);
+			ConnectionStateListener         listener = new ConnectionStateListener()
+			{
+				@Override
+				public void stateChanged(CuratorFramework client, ConnectionState newState)
+				{
+					if ( (newState == ConnectionState.LOST) || (newState == ConnectionState.SUSPENDED) )
+					{
+						semaphore.release();
+					}
+					else if ( newState == ConnectionState.RECONNECTED )
+					{
+						latch.countDown();
+					}
+				}
+			};
+			namespaceClient.getConnectionStateListenable().addListener(listener);
+			server.stop();
 
-            Assert.assertTrue(timing.acquireSemaphore(semaphore));
-            try
-            {
-                namespaceClient.delete().guaranteed().forPath("/test-me");
-                Assert.fail();
-            }
-            catch ( KeeperException.ConnectionLossException e )
-            {
-                // expected
-            }
-            Assert.assertTrue(timing.acquireSemaphore(semaphore));
+			Assert.assertTrue(timing.acquireSemaphore(semaphore));
+			try
+			{
+				namespaceClient.delete().guaranteed().forPath("/test-me");
+				Assert.fail();
+			}
+			catch ( KeeperException.ConnectionLossException e )
+			{
+				// expected
+			}
+			Assert.assertTrue(timing.acquireSemaphore(semaphore));
 
-            timing.sleepABit();
+			timing.sleepABit();
 
-            server = new TestingServer(server.getPort(), server.getTempDirectory());
-            Assert.assertTrue(timing.awaitLatch(latch));
+			server = new TestingServer(server.getPort(), server.getTempDirectory());
+			Assert.assertTrue(timing.awaitLatch(latch));
 
-            timing.sleepABit();
+			timing.sleepABit();
 
-            Assert.assertNull(namespaceClient.checkExists().forPath("/test-me"));
-        }
-        finally
-        {
-            Closeables.closeQuietly(client);
-        }
-    }
+			Assert.assertNull(namespaceClient.checkExists().forPath("/test-me"));
+		}
+		finally
+		{
+			Closeables.closeQuietly(client);
+		}
+	}
 
-    @Test
-    public void     testBasic() throws Exception
-    {
-        final String PATH = "/one/two/three";
+	@Test
+	public void     testBasic() throws Exception
+	{
+		final String PATH = "/one/two/three";
 
-        Timing                          timing = new Timing();
-        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
-        builder.connectString(server.getConnectString()).retryPolicy(new RetryOneTime(1)).connectionTimeoutMs(timing.connection()).sessionTimeoutMs(timing.session());
-        CuratorFrameworkImpl            client = new CuratorFrameworkImpl(builder);
-        client.start();
-        try
-        {
-            client.create().creatingParentsIfNeeded().forPath(PATH);
-            Assert.assertNotNull(client.checkExists().forPath(PATH));
+		Timing                          timing = new Timing();
+		CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
+		builder.connectString(server.getConnectString()).retryPolicy(new RetryOneTime(1)).connectionTimeoutMs(timing.connection()).sessionTimeoutMs(timing.session());
+		CuratorFrameworkImpl            client = new CuratorFrameworkImpl(builder);
+		client.start();
+		try
+		{
+			client.create().creatingParentsIfNeeded().forPath(PATH);
+			Assert.assertNotNull(client.checkExists().forPath(PATH));
 
-            File    serverDir = server.getTempDirectory();
-            int     serverPort = server.getPort();
+			File    serverDir = server.getTempDirectory();
+			int     serverPort = server.getPort();
 
-            server.stop(); // cause the next delete to fail
-            server = null;
-            try
-            {
-                client.delete().forPath(PATH);
-                Assert.fail();
-            }
-            catch ( KeeperException.ConnectionLossException e )
-            {
-                // expected
-            }
-            
-            server = new TestingServer(serverPort, serverDir);
-            Assert.assertNotNull(client.checkExists().forPath(PATH));
+			server.stop(); // cause the next delete to fail
+			server = null;
+			try
+			{
+				client.delete().forPath(PATH);
+				Assert.fail();
+			}
+			catch ( KeeperException.ConnectionLossException e )
+			{
+				// expected
+			}
 
-            server.stop(); // cause the next delete to fail
-            server = null;
-            try
-            {
-                client.delete().guaranteed().forPath(PATH);
-                Assert.fail();
-            }
-            catch ( KeeperException.ConnectionLossException e )
-            {
-                // expected
-            }
+			server = new TestingServer(serverPort, serverDir);
+			Assert.assertNotNull(client.checkExists().forPath(PATH));
 
-            server = new TestingServer(serverPort, serverDir);
+			server.stop(); // cause the next delete to fail
+			server = null;
+			try
+			{
+				client.delete().guaranteed().forPath(PATH);
+				Assert.fail();
+			}
+			catch ( KeeperException.ConnectionLossException e )
+			{
+				// expected
+			}
 
-            final int       TRIES = 5;
-            for ( int i = 0; i < TRIES; ++i )
-            {
-                if ( client.checkExists().forPath(PATH) != null )
-                {
-                    timing.sleepABit();
-                }
-            }
-            Assert.assertNull(client.checkExists().forPath(PATH));
-        }
-        finally
-        {
-            Closeables.closeQuietly(client);
-        }
-    }
+			server = new TestingServer(serverPort, serverDir);
+
+			final int       TRIES = 5;
+			for ( int i = 0; i < TRIES; ++i )
+			{
+				if ( client.checkExists().forPath(PATH) != null )
+				{
+					timing.sleepABit();
+				}
+			}
+			Assert.assertNull(client.checkExists().forPath(PATH));
+		}
+		finally
+		{
+			Closeables.closeQuietly(client);
+		}
+	}
 }

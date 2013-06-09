@@ -33,84 +33,84 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class TestFrameworkBackground extends BaseClassForTests
 {
-    @Test
-    public void         testRetries() throws Exception
-    {
-        final int SLEEP = 1000;
-        final int TIMES = 5;
+	@Test
+	public void         testRetries() throws Exception
+	{
+		final int SLEEP = 1000;
+		final int TIMES = 5;
 
-        Timing                  timing = new Timing();
-        CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryNTimes(TIMES, SLEEP));
-        try
-        {
-            client.start();
-            client.getZookeeperClient().blockUntilConnectedOrTimedOut();
+		Timing                  timing = new Timing();
+		CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryNTimes(TIMES, SLEEP));
+		try
+		{
+			client.start();
+			client.getZookeeperClient().blockUntilConnectedOrTimedOut();
 
-            final CountDownLatch    latch = new CountDownLatch(TIMES);
-            final List<Long>        times = Lists.newArrayList();
-            final AtomicLong        start = new AtomicLong(System.currentTimeMillis());
-            ((CuratorFrameworkImpl)client).debugListener = new CuratorFrameworkImpl.DebugBackgroundListener()
-            {
-                @Override
-                public void listen(OperationAndData<?> data)
-                {
-                    if ( data.getOperation().getClass().getName().contains("CreateBuilderImpl") )
-                    {
-                        long now = System.currentTimeMillis();
-                        times.add(now - start.get());
-                        start.set(now);
-                        latch.countDown();
-                    }
-                }
-            };
+			final CountDownLatch    latch = new CountDownLatch(TIMES);
+			final List<Long>        times = Lists.newArrayList();
+			final AtomicLong        start = new AtomicLong(System.currentTimeMillis());
+			((CuratorFrameworkImpl)client).debugListener = new CuratorFrameworkImpl.DebugBackgroundListener()
+			{
+				@Override
+				public void listen(OperationAndData<?> data)
+				{
+					if ( data.getOperation().getClass().getName().contains("CreateBuilderImpl") )
+					{
+						long now = System.currentTimeMillis();
+						times.add(now - start.get());
+						start.set(now);
+						latch.countDown();
+					}
+				}
+			};
 
-            server.stop();
-            client.create().inBackground().forPath("/one");
+			server.stop();
+			client.create().inBackground().forPath("/one");
 
-            latch.await();
+			latch.await();
 
-            for ( long elapsed : times.subList(1, times.size()) )   // first one isn't a retry
-            {
-                Assert.assertTrue(elapsed >= SLEEP, elapsed + ": " + times);
-            }
-        }
-        finally
-        {
-            Closeables.closeQuietly(client);
-        }
-    }
+			for ( long elapsed : times.subList(1, times.size()) )   // first one isn't a retry
+			{
+				Assert.assertTrue(elapsed >= SLEEP, elapsed + ": " + times);
+			}
+		}
+		finally
+		{
+			Closeables.closeQuietly(client);
+		}
+	}
 
-    @Test
-    public void         testBasic() throws Exception
-    {
-        Timing              timing = new Timing();
-        CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        try
-        {
-            client.start();
+	@Test
+	public void         testBasic() throws Exception
+	{
+		Timing              timing = new Timing();
+		CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		try
+		{
+			client.start();
 
-            final CountDownLatch    latch = new CountDownLatch(3);
-            final List<String>      paths = Lists.newArrayList();
-            BackgroundCallback      callback = new BackgroundCallback()
-            {
-                @Override
-                public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
-                {
-                    paths.add(event.getPath());
-                    latch.countDown();
-                }
-            };
-            client.create().inBackground(callback).forPath("/one");
-            client.create().inBackground(callback).forPath("/one/two");
-            client.create().inBackground(callback).forPath("/one/two/three");
+			final CountDownLatch    latch = new CountDownLatch(3);
+			final List<String>      paths = Lists.newArrayList();
+			BackgroundCallback      callback = new BackgroundCallback()
+			{
+				@Override
+				public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
+				{
+					paths.add(event.getPath());
+					latch.countDown();
+				}
+			};
+			client.create().inBackground(callback).forPath("/one");
+			client.create().inBackground(callback).forPath("/one/two");
+			client.create().inBackground(callback).forPath("/one/two/three");
 
-            latch.await();
+			latch.await();
 
-            Assert.assertEquals(paths, Arrays.asList("/one", "/one/two", "/one/two/three"));
-        }
-        finally
-        {
-            Closeables.closeQuietly(client);
-        }
-    }
+			Assert.assertEquals(paths, Arrays.asList("/one", "/one/two", "/one/two/three"));
+		}
+		finally
+		{
+			Closeables.closeQuietly(client);
+		}
+	}
 }

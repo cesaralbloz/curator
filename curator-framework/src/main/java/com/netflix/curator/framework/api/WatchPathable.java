@@ -18,7 +18,7 @@
 package com.netflix.curator.framework.api;
 
 public interface WatchPathable<T> extends
-    Watchable<Pathable<T>>,
-    Pathable<T>
+Watchable<Pathable<T>>,
+Pathable<T>
 {
 }

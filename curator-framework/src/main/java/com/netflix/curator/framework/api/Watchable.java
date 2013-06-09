@@ -21,26 +21,26 @@ import org.apache.zookeeper.Watcher;
 
 public interface Watchable<T>
 {
-    /**
-     * Have the operation set a watch
-     *
-     * @return this
-     */
-    public T watched();
+	/**
+	 * Have the operation set a watch
+	 *
+	 * @return this
+	 */
+	public T watched();
 
-    /**
-     * Set a watcher for the operation
-     *
-     * @param watcher the watcher
-     * @return this
-     */
-    public T usingWatcher(Watcher watcher);
+	/**
+	 * Set a watcher for the operation
+	 *
+	 * @param watcher the watcher
+	 * @return this
+	 */
+	public T usingWatcher(Watcher watcher);
 
-    /**
-     * Set a watcher for the operation
-     *
-     * @param watcher the watcher
-     * @return this
-     */
-    public T usingWatcher(CuratorWatcher watcher);
+	/**
+	 * Set a watcher for the operation
+	 *
+	 * @param watcher the watcher
+	 * @return this
+	 */
+	public T usingWatcher(CuratorWatcher watcher);
 }

@@ -19,87 +19,86 @@ package com.netflix.curator.framework.recipes.leader;
 /**
  * Describes a participant in a leadership selection
  */
-@SuppressWarnings({"RedundantIfStatement"})
 public class Participant
 {
-    private final String        id;
-    private final boolean       isLeader;
+	private final String        id;
+	private final boolean       isLeader;
 
-    /**
-     * @param id the ID
-     * @param leader true if the leader
-     */
-    public Participant(String id, boolean leader)
-    {
-        this.id = id;
-        isLeader = leader;
-    }
+	/**
+	 * @param id the ID
+	 * @param leader true if the leader
+	 */
+	public Participant(String id, boolean leader)
+	{
+		this.id = id;
+		isLeader = leader;
+	}
 
-    Participant()
-    {
-        this("", false);
-    }
+	Participant()
+	{
+		this("", false);
+	}
 
-    /**
-     * Returns the ID set via {@link LeaderSelector#setId(String)}
-     *
-     * @return id
-     */
-    public String getId()
-    {
-        return id;
-    }
+	/**
+	 * Returns the ID set via {@link LeaderSelector#setId(String)}
+	 *
+	 * @return id
+	 */
+	public String getId()
+	{
+		return id;
+	}
 
-    /**
-     * Returns true if this participant is the current leader
-     *
-     * @return true/false
-     */
-    public boolean isLeader()
-    {
-        return isLeader;
-    }
+	/**
+	 * Returns true if this participant is the current leader
+	 *
+	 * @return true/false
+	 */
+	public boolean isLeader()
+	{
+		return isLeader;
+	}
 
-    @Override
-    public String toString()
-    {
-        return "Participant{" +
-            "id='" + id + '\'' +
-            ", isLeader=" + isLeader +
-            '}';
-    }
+	@Override
+	public String toString()
+	{
+		return "Participant{" +
+				"id='" + id + '\'' +
+				", isLeader=" + isLeader +
+				'}';
+	}
 
-    @Override
-    public boolean equals(Object o)
-    {
-        if ( this == o )
-        {
-            return true;
-        }
-        if ( o == null || getClass() != o.getClass() )
-        {
-            return false;
-        }
+	@Override
+	public boolean equals(Object o)
+	{
+		if ( this == o )
+		{
+			return true;
+		}
+		if ( o == null || getClass() != o.getClass() )
+		{
+			return false;
+		}
 
-        Participant that = (Participant)o;
+		Participant that = (Participant)o;
 
-        if ( isLeader != that.isLeader )
-        {
-            return false;
-        }
-        if ( !id.equals(that.id) )
-        {
-            return false;
-        }
+		if ( isLeader != that.isLeader )
+		{
+			return false;
+		}
+		if ( !id.equals(that.id) )
+		{
+			return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    public int hashCode()
-    {
-        int result = id.hashCode();
-        result = 31 * result + (isLeader ? 1 : 0);
-        return result;
-    }
+	@Override
+	public int hashCode()
+	{
+		int result = id.hashCode();
+		result = 31 * result + (isLeader ? 1 : 0);
+		return result;
+	}
 }

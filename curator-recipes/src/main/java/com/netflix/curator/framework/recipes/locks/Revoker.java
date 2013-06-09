@@ -21,29 +21,29 @@ import org.apache.zookeeper.KeeperException;
 
 public class Revoker
 {
-    /**
-     * Utility to mark a lock for revocation. Assuming that the lock has been registered with
-     * a {@link RevocationListener}, it will get called and the lock should be released. Note,
-     * however, that revocation is cooperative.
-     *
-     * @param client the client
-     * @param path the path of the lock - usually from something like
-     * {@link InterProcessMutex#getParticipantNodes()}
-     * @throws Exception errors
-     */
-    public static void  attemptRevoke(CuratorFramework client, String path) throws Exception
-    {
-        try
-        {
-            client.setData().forPath(path, LockInternals.REVOKE_MESSAGE);
-        }
-        catch ( KeeperException.NoNodeException ignore )
-        {
-            // ignore
-        }
-    }
+	/**
+	 * Utility to mark a lock for revocation. Assuming that the lock has been registered with
+	 * a {@link RevocationListener}, it will get called and the lock should be released. Note,
+	 * however, that revocation is cooperative.
+	 *
+	 * @param client the client
+	 * @param path the path of the lock - usually from something like
+	 * {@link InterProcessMutex#getParticipantNodes()}
+	 * @throws Exception errors
+	 */
+	public static void  attemptRevoke(CuratorFramework client, String path) throws Exception
+	{
+		try
+		{
+			client.setData().forPath(path, LockInternals.REVOKE_MESSAGE);
+		}
+		catch ( KeeperException.NoNodeException ignore )
+		{
+			// ignore
+		}
+	}
 
-    private Revoker()
-    {
-    }
+	private Revoker()
+	{
+	}
 }

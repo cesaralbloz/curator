@@ -18,9 +18,9 @@
 package com.netflix.curator.framework.api;
 
 public interface GetDataBuilder extends
-    Watchable<BackgroundPathable<byte[]>>,
-    BackgroundPathable<byte[]>,
-    Statable<WatchPathable<byte[]>>,
-    Decompressible<GetDataWatchBackgroundStatable>
+Watchable<BackgroundPathable<byte[]>>,
+BackgroundPathable<byte[]>,
+Statable<WatchPathable<byte[]>>,
+Decompressible<GetDataWatchBackgroundStatable>
 {
 }

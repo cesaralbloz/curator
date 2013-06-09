@@ -32,122 +32,122 @@ import java.util.concurrent.atomic.AtomicReference;
 
 class ChildrenCache implements Closeable
 {
-    private final CuratorFramework client;
-    private final String path;
-    private final AtomicReference<Data> children = new AtomicReference<Data>(new Data(Lists.<String>newArrayList(), 0));
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
+	private final CuratorFramework client;
+	private final String path;
+	private final AtomicReference<Data> children = new AtomicReference<Data>(new Data(Lists.<String>newArrayList(), 0));
+	private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
-    private final CuratorWatcher watcher = new CuratorWatcher()
-    {
-        @Override
-        public void process(WatchedEvent event) throws Exception
-        {
-            if ( !isClosed.get() )
-            {
-                sync(true);
-            }
-        }
-    };
+	private final CuratorWatcher watcher = new CuratorWatcher()
+	{
+		@Override
+		public void process(WatchedEvent event) throws Exception
+		{
+			if ( !isClosed.get() )
+			{
+				sync(true);
+			}
+		}
+	};
 
-    private final BackgroundCallback  callback = new BackgroundCallback()
-    {
-        @Override
-        public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
-        {
-            setNewChildren(event.getChildren());
-        }
-    };
+	private final BackgroundCallback  callback = new BackgroundCallback()
+	{
+		@Override
+		public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
+		{
+			setNewChildren(event.getChildren());
+		}
+	};
 
-    static class Data
-    {
-        final List<String>      children;
-        final long              version;
+	static class Data
+	{
+		final List<String>      children;
+		final long              version;
 
-        private Data(List<String> children, long version)
-        {
-            this.children = ImmutableList.copyOf(children);
-            this.version = version;
-        }
-    }
+		private Data(List<String> children, long version)
+		{
+			this.children = ImmutableList.copyOf(children);
+			this.version = version;
+		}
+	}
 
-    ChildrenCache(CuratorFramework client, String path)
-    {
-        this.client = client;
-        this.path = path;
-    }
+	ChildrenCache(CuratorFramework client, String path)
+	{
+		this.client = client;
+		this.path = path;
+	}
 
-    void start() throws Exception
-    {
-        sync(true);
-    }
+	void start() throws Exception
+	{
+		sync(true);
+	}
 
-    @Override
-    public void close() throws IOException
-    {
-        isClosed.set(true);
-        notifyFromCallback();
-    }
+	@Override
+	public void close() throws IOException
+	{
+		isClosed.set(true);
+		notifyFromCallback();
+	}
 
-    Data getData()
-    {
-        return children.get();
-    }
+	Data getData()
+	{
+		return children.get();
+	}
 
-    Data blockingNextGetData(long startVersion) throws InterruptedException
-    {
-        return blockingNextGetData(startVersion, 0, null);
-    }
+	Data blockingNextGetData(long startVersion) throws InterruptedException
+	{
+		return blockingNextGetData(startVersion, 0, null);
+	}
 
-    synchronized Data blockingNextGetData(long startVersion, long maxWait, TimeUnit unit) throws InterruptedException
-    {
-        long            startMs = System.currentTimeMillis();
-        boolean         hasMaxWait = (unit != null);
-        long            maxWaitMs = hasMaxWait ? unit.toMillis(maxWait) : -1;
-        while ( startVersion == children.get().version )
-        {
-            if ( hasMaxWait )
-            {
-                long        elapsedMs = System.currentTimeMillis() - startMs;
-                long        thisWaitMs = maxWaitMs - elapsedMs;
-                if ( thisWaitMs <= 0 )
-                {
-                    break;
-                }
-                wait(thisWaitMs);
-            }
-            else
-            {
-                wait();
-            }
-        }
-        return children.get();
-    }
+	synchronized Data blockingNextGetData(long startVersion, long maxWait, TimeUnit unit) throws InterruptedException
+	{
+		long            startMs = System.currentTimeMillis();
+		boolean         hasMaxWait = (unit != null);
+		long            maxWaitMs = hasMaxWait ? unit.toMillis(maxWait) : -1;
+		while ( startVersion == children.get().version )
+		{
+			if ( hasMaxWait )
+			{
+				long        elapsedMs = System.currentTimeMillis() - startMs;
+				long        thisWaitMs = maxWaitMs - elapsedMs;
+				if ( thisWaitMs <= 0 )
+				{
+					break;
+				}
+				wait(thisWaitMs);
+			}
+			else
+			{
+				wait();
+			}
+		}
+		return children.get();
+	}
 
-    private synchronized void notifyFromCallback()
-    {
-        notifyAll();
-    }
+	private synchronized void notifyFromCallback()
+	{
+		notifyAll();
+	}
 
-    private synchronized void sync(boolean watched) throws Exception
-    {
-        if ( watched )
-        {
-            client.getChildren().usingWatcher(watcher).inBackground(callback).forPath(path);
-        }
-        else
-        {
-            client.getChildren().inBackground(callback).forPath(path);
-        }
-    }
+	private synchronized void sync(boolean watched) throws Exception
+	{
+		if ( watched )
+		{
+			client.getChildren().usingWatcher(watcher).inBackground(callback).forPath(path);
+		}
+		else
+		{
+			client.getChildren().inBackground(callback).forPath(path);
+		}
+	}
 
-    private synchronized void setNewChildren(List<String> newChildren)
-    {
-        if ( newChildren != null )
-        {
-            Data currentData = children.get();
+	private synchronized void setNewChildren(List<String> newChildren)
+	{
+		if ( newChildren != null )
+		{
+			Data currentData = children.get();
 
-            children.set(new Data(newChildren, currentData.version + 1));
-            notifyFromCallback();
-        }
-    }
+			children.set(new Data(newChildren, currentData.version + 1));
+			notifyFromCallback();
+		}
+	}
 }

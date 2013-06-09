@@ -23,10 +23,10 @@ import com.netflix.curator.framework.listen.Listenable;
  */
 public interface SharedCountReader extends Listenable<SharedCountListener>
 {
-    /**
-     * Return the current value of the count
-     *
-     * @return count
-     */
-    int      getCount();
+	/**
+	 * Return the current value of the count
+	 *
+	 * @return count
+	 */
+	int      getCount();
 }

@@ -19,7 +19,6 @@
 package com.netflix.curator.framework.imps;
 
 import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 
 class NamespaceWatchedEvent extends WatchedEvent
 {

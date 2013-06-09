@@ -8,12 +8,12 @@ import org.apache.zookeeper.Watcher;
  */
 public interface CuratorWatcher
 {
-    /**
-     * Same as {@link Watcher#process(WatchedEvent)}. If an exception
-     * is thrown, Curator will log it
-     *
-     * @param event the event
-     * @throws Exception any exceptions to log
-     */
-    public void process(WatchedEvent event) throws Exception;
+	/**
+	 * Same as {@link Watcher#process(WatchedEvent)}. If an exception
+	 * is thrown, Curator will log it
+	 *
+	 * @param event the event
+	 * @throws Exception any exceptions to log
+	 */
+	public void process(WatchedEvent event) throws Exception;
 }

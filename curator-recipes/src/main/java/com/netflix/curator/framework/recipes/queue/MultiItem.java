@@ -23,12 +23,12 @@ package com.netflix.curator.framework.recipes.queue;
  */
 public interface MultiItem<T>
 {
-    /**
-     * Called repeatedly to get the items to add to the queue. This method
-     * should return <code>null</code> when there are no more items to add.
-     *
-     * @return item or null
-     * @throws Exception any errors
-     */
-    public T    nextItem() throws Exception;
+	/**
+	 * Called repeatedly to get the items to add to the queue. This method
+	 * should return <code>null</code> when there are no more items to add.
+	 *
+	 * @return item or null
+	 * @throws Exception any errors
+	 */
+	public T    nextItem() throws Exception;
 }

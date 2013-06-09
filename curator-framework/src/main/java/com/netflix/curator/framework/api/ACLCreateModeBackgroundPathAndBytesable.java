@@ -18,8 +18,8 @@
 package com.netflix.curator.framework.api;
 
 public interface ACLCreateModeBackgroundPathAndBytesable<T> extends
-    ACLBackgroundPathAndBytesable<T>,
-    BackgroundPathAndBytesable<T>,
-    CreateModable<ACLBackgroundPathAndBytesable<T>>
+ACLBackgroundPathAndBytesable<T>,
+BackgroundPathAndBytesable<T>,
+CreateModable<ACLBackgroundPathAndBytesable<T>>
 {
 }

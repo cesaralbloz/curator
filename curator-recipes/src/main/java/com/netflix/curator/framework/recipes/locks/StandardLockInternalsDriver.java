@@ -24,43 +24,43 @@ import java.util.List;
 
 public class StandardLockInternalsDriver implements LockInternalsDriver
 {
-    static private final Logger log = LoggerFactory.getLogger(StandardLockInternalsDriver.class);
+	static private final Logger log = LoggerFactory.getLogger(StandardLockInternalsDriver.class);
 
-    @Override
-    public PredicateResults getsTheLock(CuratorFramework client, List<String> children, String sequenceNodeName, int maxLeases) throws Exception
-    {
-        int             ourIndex = children.indexOf(sequenceNodeName);
-        validateOurIndex(sequenceNodeName, ourIndex);
+	@Override
+	public PredicateResults getsTheLock(CuratorFramework client, List<String> children, String sequenceNodeName, int maxLeases) throws Exception
+	{
+		int             ourIndex = children.indexOf(sequenceNodeName);
+		validateOurIndex(sequenceNodeName, ourIndex);
 
-        boolean         getsTheLock = ourIndex < maxLeases;
-        String          pathToWatch = getsTheLock ? null : children.get(ourIndex - maxLeases);
+		boolean         getsTheLock = ourIndex < maxLeases;
+		String          pathToWatch = getsTheLock ? null : children.get(ourIndex - maxLeases);
 
-        return new PredicateResults(pathToWatch, getsTheLock);
-    }
+		return new PredicateResults(pathToWatch, getsTheLock);
+	}
 
-    @Override
-    public String fixForSorting(String str, String lockName)
-    {
-        return standardFixForSorting(str, lockName);
-    }
+	@Override
+	public String fixForSorting(String str, String lockName)
+	{
+		return standardFixForSorting(str, lockName);
+	}
 
-    public static String standardFixForSorting(String str, String lockName)
-    {
-        int index = str.lastIndexOf(lockName);
-        if ( index >= 0 )
-        {
-            index += lockName.length();
-            return index <= str.length() ? str.substring(index) : "";
-        }
-        return str;
-    }
+	public static String standardFixForSorting(String str, String lockName)
+	{
+		int index = str.lastIndexOf(lockName);
+		if ( index >= 0 )
+		{
+			index += lockName.length();
+			return index <= str.length() ? str.substring(index) : "";
+		}
+		return str;
+	}
 
-    static void validateOurIndex(String sequenceNodeName, int ourIndex) throws KeeperException
-    {
-        if ( ourIndex < 0 )
-        {
-            log.error("Sequential path not found: " + sequenceNodeName);
-            throw new KeeperException.NoNodeException("Sequential path not found: " + sequenceNodeName);
-        }
-    }
+	static void validateOurIndex(String sequenceNodeName, int ourIndex) throws KeeperException
+	{
+		if ( ourIndex < 0 )
+		{
+			log.error("Sequential path not found: " + sequenceNodeName);
+			throw new KeeperException.NoNodeException("Sequential path not found: " + sequenceNodeName);
+		}
+	}
 }

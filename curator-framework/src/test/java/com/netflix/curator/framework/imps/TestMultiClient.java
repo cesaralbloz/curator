@@ -32,67 +32,67 @@ import java.util.concurrent.TimeUnit;
 
 public class TestMultiClient extends BaseClassForTests
 {
-    @Test
-    public void     testNotify() throws Exception
-    {
-        CuratorFramework client1 = null;
-        CuratorFramework client2 = null;
-        try
-        {
-            client1 = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-            client2 = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+	@Test
+	public void     testNotify() throws Exception
+	{
+		CuratorFramework client1 = null;
+		CuratorFramework client2 = null;
+		try
+		{
+			client1 = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+			client2 = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
 
-            client1.start();
-            client2.start();
+			client1.start();
+			client2.start();
 
-            final CountDownLatch        latch = new CountDownLatch(1);
-            client1.getCuratorListenable().addListener
-            (
-                new CuratorListener()
-                {
-                    @Override
-                    public void eventReceived(CuratorFramework client, CuratorEvent event) throws Exception
-                    {
-                        if ( event.getType() == CuratorEventType.WATCHED )
-                        {
-                            if ( event.getWatchedEvent().getType() == Watcher.Event.EventType.NodeDataChanged )
-                            {
-                                if ( event.getPath().equals("/test") )
-                                {
-                                    latch.countDown();
-                                }
-                            }
-                        }
-                    }
-                }
-            );
+			final CountDownLatch        latch = new CountDownLatch(1);
+			client1.getCuratorListenable().addListener
+			(
+					new CuratorListener()
+					{
+						@Override
+						public void eventReceived(CuratorFramework client, CuratorEvent event) throws Exception
+						{
+							if ( event.getType() == CuratorEventType.WATCHED )
+							{
+								if ( event.getWatchedEvent().getType() == Watcher.Event.EventType.NodeDataChanged )
+								{
+									if ( event.getPath().equals("/test") )
+									{
+										latch.countDown();
+									}
+								}
+							}
+						}
+					}
+					);
 
-            client1.create().forPath("/test", new byte[]{1, 2, 3});
-            client1.checkExists().watched().forPath("/test");
+			client1.create().forPath("/test", new byte[]{1, 2, 3});
+			client1.checkExists().watched().forPath("/test");
 
-            client2.getCuratorListenable().addListener
-            (
-                new CuratorListener()
-                {
-                    @Override
-                    public void eventReceived(CuratorFramework client, CuratorEvent event) throws Exception
-                    {
-                        if ( event.getType() == CuratorEventType.SYNC )
-                        {
-                            client.setData().forPath("/test", new byte[]{10, 20});
-                        }
-                    }
-                }
-            );
+			client2.getCuratorListenable().addListener
+			(
+					new CuratorListener()
+					{
+						@Override
+						public void eventReceived(CuratorFramework client, CuratorEvent event) throws Exception
+						{
+							if ( event.getType() == CuratorEventType.SYNC )
+							{
+								client.setData().forPath("/test", new byte[]{10, 20});
+							}
+						}
+					}
+					);
 
-            client2.sync("/test", null);
+			client2.sync("/test", null);
 
-            Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
-        }
-        finally
-        {
-            Closeables.closeQuietly(client1);
-            Closeables.closeQuietly(client2);
-        }
-    }
+			Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+		}
+		finally
+		{
+			Closeables.closeQuietly(client1);
+			Closeables.closeQuietly(client2);
+		}
+	}
 }

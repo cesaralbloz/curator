@@ -19,12 +19,12 @@ package com.netflix.curator.framework.api;
 
 public interface Pathable<T>
 {
-    /**
-     * Commit the currently building operation using the given path
-     *
-     * @param path the path
-     * @return operation result if any
-     * @throws Exception errors
-     */
-    public T       forPath(String path) throws Exception;
+	/**
+	 * Commit the currently building operation using the given path
+	 *
+	 * @param path the path
+	 * @return operation result if any
+	 * @throws Exception errors
+	 */
+	public T       forPath(String path) throws Exception;
 }

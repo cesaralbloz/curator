@@ -31,69 +31,69 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TestPathChildrenCacheInCluster
 {
-    @Test
-    public void     testServerLoss() throws Exception
-    {
-        Timing                  timing = new Timing();
+	@Test
+	public void     testServerLoss() throws Exception
+	{
+		Timing                  timing = new Timing();
 
-        CuratorFramework client = null;
-        PathChildrenCache cache = null;
-        TestingCluster cluster = new TestingCluster(3);
-        try
-        {
-            cluster.start();
+		CuratorFramework client = null;
+		PathChildrenCache cache = null;
+		TestingCluster cluster = new TestingCluster(3);
+		try
+		{
+			cluster.start();
 
-            client = CuratorFrameworkFactory.newClient(cluster.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-            client.start();
-            client.create().creatingParentsIfNeeded().forPath("/test");
+			client = CuratorFrameworkFactory.newClient(cluster.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+			client.start();
+			client.create().creatingParentsIfNeeded().forPath("/test");
 
-            cache = new PathChildrenCache(client, "/test", false);
-            cache.start();
+			cache = new PathChildrenCache(client, "/test", false);
+			cache.start();
 
-            final CountDownLatch                    resetLatch = new CountDownLatch(1);
-            final CountDownLatch                    reconnectLatch = new CountDownLatch(1);
-            final AtomicReference<CountDownLatch>   latch = new AtomicReference<CountDownLatch>(new CountDownLatch(3));
-            cache.getListenable().addListener
-                (
-                    new PathChildrenCacheListener()
-                    {
-                        @Override
-                        public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception
-                        {
-                            if ( event.getType() == PathChildrenCacheEvent.Type.CONNECTION_SUSPENDED )
-                            {
-                                resetLatch.countDown();
-                            }
-                            else if ( event.getType() == PathChildrenCacheEvent.Type.CONNECTION_RECONNECTED )
-                            {
-                                reconnectLatch.countDown();
-                            }
-                            else if ( event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED )
-                            {
-                                latch.get().countDown();
-                            }
-                        }
-                    }
-                );
+			final CountDownLatch                    resetLatch = new CountDownLatch(1);
+			final CountDownLatch                    reconnectLatch = new CountDownLatch(1);
+			final AtomicReference<CountDownLatch>   latch = new AtomicReference<CountDownLatch>(new CountDownLatch(3));
+			cache.getListenable().addListener
+			(
+					new PathChildrenCacheListener()
+					{
+						@Override
+						public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception
+						{
+							if ( event.getType() == PathChildrenCacheEvent.Type.CONNECTION_SUSPENDED )
+							{
+								resetLatch.countDown();
+							}
+							else if ( event.getType() == PathChildrenCacheEvent.Type.CONNECTION_RECONNECTED )
+							{
+								reconnectLatch.countDown();
+							}
+							else if ( event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED )
+							{
+								latch.get().countDown();
+							}
+						}
+					}
+					);
 
-            client.create().forPath("/test/one");
-            client.create().forPath("/test/two");
-            client.create().forPath("/test/three");
+			client.create().forPath("/test/one");
+			client.create().forPath("/test/two");
+			client.create().forPath("/test/three");
 
-            Assert.assertTrue(latch.get().await(10, TimeUnit.SECONDS));
+			Assert.assertTrue(latch.get().await(10, TimeUnit.SECONDS));
 
-            InstanceSpec connectionInstance = cluster.findConnectionInstance(client.getZookeeperClient().getZooKeeper());
-            cluster.killServer(connectionInstance);
+			InstanceSpec connectionInstance = cluster.findConnectionInstance(client.getZookeeperClient().getZooKeeper());
+			cluster.killServer(connectionInstance);
 
-            Assert.assertTrue(timing.awaitLatch(reconnectLatch));
+			Assert.assertTrue(timing.awaitLatch(reconnectLatch));
 
-            Assert.assertEquals(cache.getCurrentData().size(), 3);
-        }
-        finally
-        {
-            Closeables.closeQuietly(cache);
-            Closeables.closeQuietly(client);
-            Closeables.closeQuietly(cluster);
-        }
-    }
+			Assert.assertEquals(cache.getCurrentData().size(), 3);
+		}
+		finally
+		{
+			Closeables.closeQuietly(cache);
+			Closeables.closeQuietly(client);
+			Closeables.closeQuietly(cluster);
+		}
+	}
 }

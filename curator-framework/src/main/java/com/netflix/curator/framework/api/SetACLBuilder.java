@@ -20,7 +20,7 @@ package com.netflix.curator.framework.api;
 import org.apache.zookeeper.data.Stat;
 
 public interface SetACLBuilder extends
-    ACLable<BackgroundPathable<Stat>>,
-    Versionable<ACLable<BackgroundPathable<Stat>>>
+ACLable<BackgroundPathable<Stat>>,
+Versionable<ACLable<BackgroundPathable<Stat>>>
 {
 }

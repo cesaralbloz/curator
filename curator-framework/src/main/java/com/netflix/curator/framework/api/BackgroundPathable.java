@@ -18,7 +18,7 @@
 package com.netflix.curator.framework.api;
 
 public interface BackgroundPathable<T> extends
-    Backgroundable<Pathable<T>>,
-    Pathable<T>
+Backgroundable<Pathable<T>>,
+Pathable<T>
 {
 }

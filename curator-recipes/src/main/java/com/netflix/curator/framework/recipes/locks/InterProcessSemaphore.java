@@ -62,216 +62,216 @@ import java.util.concurrent.TimeUnit;
  */
 public class InterProcessSemaphore
 {
-    private final Logger        log = LoggerFactory.getLogger(getClass());
-    private final LockInternals internals;
+	private final Logger        log = LoggerFactory.getLogger(getClass());
+	private final LockInternals internals;
 
-    private static final String     LOCK_NAME = "lock-";
+	private static final String     LOCK_NAME = "lock-";
 
-    /**
-     * @param client the client
-     * @param path path for the semaphore
-     * @param maxLeases the max number of leases to allow for this instance
-     */
-    public InterProcessSemaphore(CuratorFramework client, String path, int maxLeases)
-    {
-        this(client, path, maxLeases, null);
-    }
+	/**
+	 * @param client the client
+	 * @param path path for the semaphore
+	 * @param maxLeases the max number of leases to allow for this instance
+	 */
+	public InterProcessSemaphore(CuratorFramework client, String path, int maxLeases)
+	{
+		this(client, path, maxLeases, null);
+	}
 
-    /**
-     * @param client the client
-     * @param path path for the semaphore
-     * @param count the shared count to use for the max leases
-     */
-    public InterProcessSemaphore(CuratorFramework client, String path, SharedCountReader count)
-    {
-        this(client, path, 0, count);
-    }
+	/**
+	 * @param client the client
+	 * @param path path for the semaphore
+	 * @param count the shared count to use for the max leases
+	 */
+	public InterProcessSemaphore(CuratorFramework client, String path, SharedCountReader count)
+	{
+		this(client, path, 0, count);
+	}
 
-    private InterProcessSemaphore(CuratorFramework client, String path, int maxLeases, SharedCountReader count)
-    {
-        internals = new LockInternals(client, new StandardLockInternalsDriver(), path, LOCK_NAME, (count != null) ? count.getCount() : maxLeases);
-        if ( count != null )
-        {
-            count.addListener
-            (
-                new SharedCountListener()
-                {
-                    @Override
-                    public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception
-                    {
-                        internals.setMaxLeases(newCount);
-                    }
+	private InterProcessSemaphore(CuratorFramework client, String path, int maxLeases, SharedCountReader count)
+	{
+		internals = new LockInternals(client, new StandardLockInternalsDriver(), path, LOCK_NAME, (count != null) ? count.getCount() : maxLeases);
+		if ( count != null )
+		{
+			count.addListener
+			(
+					new SharedCountListener()
+					{
+						@Override
+						public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception
+						{
+							internals.setMaxLeases(newCount);
+						}
 
-                    @Override
-                    public void stateChanged(CuratorFramework client, ConnectionState newState)
-                    {
-                        // no need to handle this here - clients should set their own connection state listener
-                    }
-                }
-            );
-        }
-    }
+						@Override
+						public void stateChanged(CuratorFramework client, ConnectionState newState)
+						{
+							// no need to handle this here - clients should set their own connection state listener
+						}
+					}
+					);
+		}
+	}
 
-    /**
-     * Convenience method. Closes all leases in the given collection of leases
-     *
-     * @param leases leases to close
-     */
-    public void     returnAll(Collection<Lease> leases)
-    {
-        for ( Lease l : leases )
-        {
-            Closeables.closeQuietly(l);
-        }
-    }
+	/**
+	 * Convenience method. Closes all leases in the given collection of leases
+	 *
+	 * @param leases leases to close
+	 */
+	public void     returnAll(Collection<Lease> leases)
+	{
+		for ( Lease l : leases )
+		{
+			Closeables.closeQuietly(l);
+		}
+	}
 
-    /**
-     * Convenience method. Closes the lease
-     *
-     * @param lease lease to close
-     */
-    public void     returnLease(Lease lease)
-    {
-        Closeables.closeQuietly(lease);
-    }
+	/**
+	 * Convenience method. Closes the lease
+	 *
+	 * @param lease lease to close
+	 */
+	public void     returnLease(Lease lease)
+	{
+		Closeables.closeQuietly(lease);
+	}
 
-    /**
-     * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
-     * number of leases is increased or another client/process closes a lease.</p>
-     *
-     * <p>The client must close the lease when it is done with it. You should do this in a
-     * <code>finally</code> block.</p>
-     *
-     * @return the new lease
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Lease acquire() throws Exception
-    {
-        String      path = internals.attemptLock(-1, null, null);
-        return makeLease(path);
-    }
+	/**
+	 * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
+	 * number of leases is increased or another client/process closes a lease.</p>
+	 *
+	 * <p>The client must close the lease when it is done with it. You should do this in a
+	 * <code>finally</code> block.</p>
+	 *
+	 * @return the new lease
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Lease acquire() throws Exception
+	{
+		String      path = internals.attemptLock(-1, null, null);
+		return makeLease(path);
+	}
 
-    /**
-     * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
-     * blocks until either the maximum number of leases is increased enough or other clients/processes
-     * close enough leases.</p>
-     *
-     * <p>The client must close the leases when it is done with them. You should do this in a
-     * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
-     *
-     * @param qty number of leases to acquire
-     * @return the new leases
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Collection<Lease> acquire(int qty) throws Exception
-    {
-        Preconditions.checkArgument(qty > 0, "qty cannot be 0");
+	/**
+	 * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
+	 * blocks until either the maximum number of leases is increased enough or other clients/processes
+	 * close enough leases.</p>
+	 *
+	 * <p>The client must close the leases when it is done with them. You should do this in a
+	 * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
+	 *
+	 * @param qty number of leases to acquire
+	 * @return the new leases
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Collection<Lease> acquire(int qty) throws Exception
+	{
+		Preconditions.checkArgument(qty > 0, "qty cannot be 0");
 
-        ImmutableList.Builder<Lease>    builder = ImmutableList.builder();
-        try
-        {
-            while ( qty-- > 0 )
-            {
-                String      path = internals.attemptLock(-1, null, null);
-                builder.add(makeLease(path));
-            }
-        }
-        catch ( Exception e )
-        {
-            returnAll(builder.build());
-            throw e;
-        }
-        return builder.build();
-    }
+		ImmutableList.Builder<Lease>    builder = ImmutableList.builder();
+		try
+		{
+			while ( qty-- > 0 )
+			{
+				String      path = internals.attemptLock(-1, null, null);
+				builder.add(makeLease(path));
+			}
+		}
+		catch ( Exception e )
+		{
+			returnAll(builder.build());
+			throw e;
+		}
+		return builder.build();
+	}
 
-    /**
-     * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
-     * number of leases is increased or another client/process closes a lease. However, this method
-     * will only block to a maximum of the time parameters given.</p>
-     *
-     * <p>The client must close the lease when it is done with it. You should do this in a
-     * <code>finally</code> block.</p>
-     *
-     * @param time time to wait
-     * @param unit time unit
-     * @return the new lease or null if time ran out
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Lease acquire(long time, TimeUnit unit) throws Exception
-    {
-        String      path = internals.attemptLock(time, unit, null);
-        return (path != null) ? makeLease(path) : null;
-    }
+	/**
+	 * <p>Acquire a lease. If no leases are available, this method blocks until either the maximum
+	 * number of leases is increased or another client/process closes a lease. However, this method
+	 * will only block to a maximum of the time parameters given.</p>
+	 *
+	 * <p>The client must close the lease when it is done with it. You should do this in a
+	 * <code>finally</code> block.</p>
+	 *
+	 * @param time time to wait
+	 * @param unit time unit
+	 * @return the new lease or null if time ran out
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Lease acquire(long time, TimeUnit unit) throws Exception
+	{
+		String      path = internals.attemptLock(time, unit, null);
+		return (path != null) ? makeLease(path) : null;
+	}
 
-    /**
-     * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
-     * blocks until either the maximum number of leases is increased enough or other clients/processes
-     * close enough leases. However, this method will only block to a maximum of the time
-     * parameters given. If time expires before all leases are acquired, the subset of acquired
-     * leases are automatically closed.</p>
-     *
-     * <p>The client must close the leases when it is done with them. You should do this in a
-     * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
-     *
-     * @param qty number of leases to acquire
-     * @param time time to wait
-     * @param unit time unit
-     * @return the new leases or null if time ran out
-     * @throws Exception ZK errors, interruptions, etc.
-     */
-    public Collection<Lease> acquire(int qty, long time, TimeUnit unit) throws Exception
-    {
-        long                startMs = System.currentTimeMillis();
-        long                waitMs = TimeUnit.MILLISECONDS.convert(time, unit);
+	/**
+	 * <p>Acquire <code>qty</code> leases. If there are not enough leases available, this method
+	 * blocks until either the maximum number of leases is increased enough or other clients/processes
+	 * close enough leases. However, this method will only block to a maximum of the time
+	 * parameters given. If time expires before all leases are acquired, the subset of acquired
+	 * leases are automatically closed.</p>
+	 *
+	 * <p>The client must close the leases when it is done with them. You should do this in a
+	 * <code>finally</code> block. NOTE: You can use {@link #returnAll(Collection)} for this.</p>
+	 *
+	 * @param qty number of leases to acquire
+	 * @param time time to wait
+	 * @param unit time unit
+	 * @return the new leases or null if time ran out
+	 * @throws Exception ZK errors, interruptions, etc.
+	 */
+	public Collection<Lease> acquire(int qty, long time, TimeUnit unit) throws Exception
+	{
+		long                startMs = System.currentTimeMillis();
+		long                waitMs = TimeUnit.MILLISECONDS.convert(time, unit);
 
-        Preconditions.checkArgument(qty > 0, "qty cannot be 0");
+		Preconditions.checkArgument(qty > 0, "qty cannot be 0");
 
-        ImmutableList.Builder<Lease>    builder = ImmutableList.builder();
-        try
-        {
-            while ( qty-- > 0 )
-            {
-                long        elapsedMs = System.currentTimeMillis() - startMs;
-                long        thisWaitMs = waitMs - elapsedMs;
+		ImmutableList.Builder<Lease>    builder = ImmutableList.builder();
+		try
+		{
+			while ( qty-- > 0 )
+			{
+				long        elapsedMs = System.currentTimeMillis() - startMs;
+				long        thisWaitMs = waitMs - elapsedMs;
 
-                String      path = (thisWaitMs > 0) ? internals.attemptLock(thisWaitMs, TimeUnit.MILLISECONDS, null) : null;
-                if ( path == null )
-                {
-                    returnAll(builder.build());
-                    return null;
-                }
-                builder.add(makeLease(path));
-            }
-        }
-        catch ( Exception e )
-        {
-            returnAll(builder.build());
-            throw e;
-        }
+				String      path = (thisWaitMs > 0) ? internals.attemptLock(thisWaitMs, TimeUnit.MILLISECONDS, null) : null;
+				if ( path == null )
+				{
+					returnAll(builder.build());
+					return null;
+				}
+				builder.add(makeLease(path));
+			}
+		}
+		catch ( Exception e )
+		{
+			returnAll(builder.build());
+			throw e;
+		}
 
-        return builder.build();
-    }
+		return builder.build();
+	}
 
-    private Lease makeLease(final String path)
-    {
-        return new Lease()
-        {
-            @Override
-            public void close() throws IOException
-            {
-                try
-                {
-                    internals.releaseLock(path);
-                }
-                catch ( KeeperException.NoNodeException e )
-                {
-                    log.warn("Lease already released", e);
-                }
-                catch ( Exception e )
-                {
-                    throw new IOException(e);
-                }
-            }
-        };
-    }
+	private Lease makeLease(final String path)
+	{
+		return new Lease()
+		{
+			@Override
+			public void close() throws IOException
+			{
+				try
+				{
+					internals.releaseLock(path);
+				}
+				catch ( KeeperException.NoNodeException e )
+				{
+					log.warn("Lease already released", e);
+				}
+				catch ( Exception e )
+				{
+					throw new IOException(e);
+				}
+			}
+		};
+	}
 }

@@ -22,13 +22,13 @@ package com.netflix.curator.framework.recipes.queue;
  */
 public enum ErrorMode
 {
-    /**
-     * If the consumer throws an exception, requeue the message. This is the default.
-     */
-    REQUEUE,
+	/**
+	 * If the consumer throws an exception, requeue the message. This is the default.
+	 */
+	REQUEUE,
 
-    /**
-     * If the consumer throws an exception, delete the message
-     */
-    DELETE
+	/**
+	 * If the consumer throws an exception, delete the message
+	 */
+	DELETE
 }

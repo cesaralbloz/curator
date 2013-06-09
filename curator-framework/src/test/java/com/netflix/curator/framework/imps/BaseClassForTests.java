@@ -25,25 +25,25 @@ import org.testng.annotations.BeforeMethod;
 
 public class BaseClassForTests
 {
-    protected TestingServer server;
+	protected TestingServer server;
 
-    @BeforeMethod
-    public void     setup() throws Exception
-    {
-        System.setProperty(DebugUtils.PROPERTY_DONT_LOG_CONNECTION_ISSUES, "true");
-        server = new TestingServer();
-    }
+	@BeforeMethod
+	public void     setup() throws Exception
+	{
+		System.setProperty(DebugUtils.PROPERTY_DONT_LOG_CONNECTION_ISSUES, "true");
+		server = new TestingServer();
+	}
 
-    @AfterMethod
-    public void     teardown()
-    {
-        try
-        {
-            server.close();
-        }
-        catch ( Throwable e )
-        {
-            e.printStackTrace();
-        }
-    }
+	@AfterMethod
+	public void     teardown()
+	{
+		try
+		{
+			server.close();
+		}
+		catch ( Throwable e )
+		{
+			e.printStackTrace();
+		}
+	}
 }

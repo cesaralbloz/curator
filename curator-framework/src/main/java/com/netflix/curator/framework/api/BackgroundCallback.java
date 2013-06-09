@@ -24,12 +24,12 @@ import com.netflix.curator.framework.CuratorFramework;
  */
 public interface BackgroundCallback
 {
-    /**
-     * Called when the async background operation completes
-     *
-     * @param client the client
-     * @param event operation result details
-     * @throws Exception errors
-     */
-    public void processResult(CuratorFramework client, CuratorEvent event) throws Exception;
+	/**
+	 * Called when the async background operation completes
+	 *
+	 * @param client the client
+	 * @param event operation result details
+	 * @throws Exception errors
+	 */
+	public void processResult(CuratorFramework client, CuratorEvent event) throws Exception;
 }

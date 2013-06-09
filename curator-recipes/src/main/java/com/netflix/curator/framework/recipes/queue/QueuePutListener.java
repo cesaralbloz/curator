@@ -22,17 +22,17 @@ package com.netflix.curator.framework.recipes.queue;
  */
 public interface QueuePutListener<T>
 {
-    /**
-     * Notification that a single item put has completed
-     *
-     * @param item the item
-     */
-    public void         putCompleted(T item);
+	/**
+	 * Notification that a single item put has completed
+	 *
+	 * @param item the item
+	 */
+	public void         putCompleted(T item);
 
-    /**
-     * Notification that a multi item put has completed
-     *
-     * @param items the items
-     */
-    public void         putMultiCompleted(MultiItem<T> items);
+	/**
+	 * Notification that a multi item put has completed
+	 *
+	 * @param items the items
+	 */
+	public void         putMultiCompleted(MultiItem<T> items);
 }

@@ -39,126 +39,129 @@ import java.util.concurrent.TimeUnit;
 
 public class TestSharedCount extends BaseClassForTests
 {
-    @Test
-    public void     testMultiClients() throws Exception
-    {
-        final int           CLIENT_QTY = 5;
+	@Test
+	public void     testMultiClients() throws Exception
+	{
+		final int           CLIENT_QTY = 5;
 
-        List<Future<List<Integer>>>     futures = Lists.newArrayList();
-        final List<CuratorFramework>    clients = new CopyOnWriteArrayList<CuratorFramework>();
-        try
-        {
-            final CountDownLatch    startLatch = new CountDownLatch(CLIENT_QTY);
-            final Semaphore         semaphore = new Semaphore(0);
-            ExecutorService         service = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Test-%d").build());
-            for ( int i = 0; i < CLIENT_QTY; ++i )
-            {
-                Future<List<Integer>> future = service.submit
-                (
-                    new Callable<List<Integer>>()
-                    {
-                        @Override
-                        public List<Integer> call() throws Exception
-                        {
-                            final List<Integer> countList = Lists.newArrayList();
-                            CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-                            clients.add(client);
-                            client.start();
+		List<Future<List<Integer>>>     futures = Lists.newArrayList();
+		final List<CuratorFramework>    clients = new CopyOnWriteArrayList<CuratorFramework>();
+		try
+		{
+			final CountDownLatch    startLatch = new CountDownLatch(CLIENT_QTY);
+			final Semaphore         semaphore = new Semaphore(0);
+			ExecutorService         service = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Test-%d").build());
+			for ( int i = 0; i < CLIENT_QTY; ++i )
+			{
+				Future<List<Integer>> future = service.submit
+						(
+								new Callable<List<Integer>>()
+								{
+									@Override
+									public List<Integer> call() throws Exception
+									{
+										final List<Integer> countList = Lists.newArrayList();
+										CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+										clients.add(client);
+										client.start();
 
-                            SharedCount count = new SharedCount(client, "/count", 10);
+										@SuppressWarnings("resource")
+										SharedCount count = new SharedCount(client, "/count", 10);
 
-                            final CountDownLatch        latch = new CountDownLatch(1);
-                            count.addListener
-                            (
-                                new SharedCountListener()
-                                {
-                                    @Override
-                                    public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception
-                                    {
-                                        if ( newCount < 0 )
-                                        {
-                                            latch.countDown();
-                                        }
-                                        else
-                                        {
-                                            countList.add(newCount);
-                                        }
+										final CountDownLatch        latch = new CountDownLatch(1);
+										count.addListener
+										(
+												new SharedCountListener()
+												{
+													@Override
+													public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception
+													{
+														if ( newCount < 0 )
+														{
+															latch.countDown();
+														}
+														else
+														{
+															countList.add(newCount);
+														}
 
-                                        semaphore.release();
-                                    }
+														semaphore.release();
+													}
 
-                                    @Override
-                                    public void stateChanged(CuratorFramework client, ConnectionState newState)
-                                    {
-                                    }
-                                }
-                            );
-                            count.start();
-                            startLatch.countDown();
-                            latch.await();
-                            return countList;
-                        }
-                    }
-                );
-                futures.add(future);
-            }
+													@Override
+													public void stateChanged(CuratorFramework client, ConnectionState newState)
+													{
+													}
+												}
+												);
+										count.start();
+										startLatch.countDown();
+										latch.await();
+										return countList;
+									}
+								}
+								);
+				futures.add(future);
+			}
 
-            CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-            clients.add(client);
-            client.start();
-            
-            Assert.assertTrue(startLatch.await(10, TimeUnit.SECONDS));
+			CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+			clients.add(client);
+			client.start();
 
-            SharedCount count = new SharedCount(client, "/count", 10);
-            count.start();
+			Assert.assertTrue(startLatch.await(10, TimeUnit.SECONDS));
 
-            List<Integer> countList = Lists.newArrayList();
-            Random        random = new Random();
-            for ( int i = 0; i < 100; ++i )
-            {
-                Thread.sleep(random.nextInt(10));
+			@SuppressWarnings("resource")
+			SharedCount count = new SharedCount(client, "/count", 10);
+			count.start();
 
-                int     next = random.nextInt(100);
-                countList.add(next);
-                count.setCount(next);
+			List<Integer> countList = Lists.newArrayList();
+			Random        random = new Random();
+			for ( int i = 0; i < 100; ++i )
+			{
+				Thread.sleep(random.nextInt(10));
 
-                Assert.assertTrue(semaphore.tryAcquire(CLIENT_QTY, 10, TimeUnit.SECONDS));
-            }
-            count.setCount(-1);
+				int     next = random.nextInt(100);
+				countList.add(next);
+				count.setCount(next);
 
-            for ( Future<List<Integer>> future : futures )
-            {
-                List<Integer>       thisCountList = future.get();
-                Assert.assertEquals(thisCountList, countList);
-            }
-        }
-        finally
-        {
-            for ( CuratorFramework client : clients )
-            {
-                Closeables.closeQuietly(client);
-            }
-        }
-    }
+				Assert.assertTrue(semaphore.tryAcquire(CLIENT_QTY, 10, TimeUnit.SECONDS));
+			}
+			count.setCount(-1);
 
-    @Test
-    public void     testSimple() throws Exception
-    {
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            SharedCount         count = new SharedCount(client, "/count", 0);
-            count.start();
+			for ( Future<List<Integer>> future : futures )
+			{
+				List<Integer>       thisCountList = future.get();
+				Assert.assertEquals(thisCountList, countList);
+			}
+		}
+		finally
+		{
+			for ( CuratorFramework client : clients )
+			{
+				Closeables.closeQuietly(client);
+			}
+		}
+	}
 
-            Assert.assertTrue(count.trySetCount(1));
-            Assert.assertTrue(count.trySetCount(2));
-            Assert.assertTrue(count.trySetCount(10));
-            Assert.assertEquals(count.getCount(), 10);
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+	@Test
+	public void     testSimple() throws Exception
+	{
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			@SuppressWarnings("resource")
+			SharedCount         count = new SharedCount(client, "/count", 0);
+			count.start();
+
+			Assert.assertTrue(count.trySetCount(1));
+			Assert.assertTrue(count.trySetCount(2));
+			Assert.assertTrue(count.trySetCount(10));
+			Assert.assertEquals(count.getCount(), 10);
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 }

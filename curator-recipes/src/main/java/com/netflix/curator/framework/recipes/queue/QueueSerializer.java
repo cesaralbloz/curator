@@ -20,19 +20,19 @@ package com.netflix.curator.framework.recipes.queue;
  */
 public interface QueueSerializer<T>
 {
-    /**
-     * Turn a queue item into bytes
-     *
-     * @param item the item
-     * @return byte representation
-     */
-    public byte[]       serialize(T item);
+	/**
+	 * Turn a queue item into bytes
+	 *
+	 * @param item the item
+	 * @return byte representation
+	 */
+	public byte[]       serialize(T item);
 
-    /**
-     * Deserialize bytes into a queue item
-     *
-     * @param bytes byte representation
-     * @return item
-     */
-    public T            deserialize(byte[] bytes);
+	/**
+	 * Deserialize bytes into a queue item
+	 *
+	 * @param bytes byte representation
+	 * @return item
+	 */
+	public T            deserialize(byte[] bytes);
 }

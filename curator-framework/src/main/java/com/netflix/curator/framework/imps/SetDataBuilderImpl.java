@@ -199,7 +199,6 @@ class SetDataBuilderImpl implements SetDataBuilder, BackgroundOperation<PathAndB
             version,
             new AsyncCallback.StatCallback()
             {
-                @SuppressWarnings({"unchecked"})
                 @Override
                 public void processResult(int rc, String path, Object ctx, Stat stat)
                 {

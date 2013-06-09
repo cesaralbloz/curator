@@ -18,5 +18,5 @@ package com.netflix.curator.framework.recipes.atomic;
 
 interface MakeValue
 {
-    public byte[]       makeFrom(byte[] previous);
+	public byte[]       makeFrom(byte[] previous);
 }

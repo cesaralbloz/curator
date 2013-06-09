@@ -20,7 +20,7 @@ package com.netflix.curator.framework.api;
 import org.apache.zookeeper.data.Stat;
 
 public interface ExistsBuilder extends
-    Watchable<BackgroundPathable<Stat>>,
-    BackgroundPathable<Stat>
+Watchable<BackgroundPathable<Stat>>,
+BackgroundPathable<Stat>
 {
 }

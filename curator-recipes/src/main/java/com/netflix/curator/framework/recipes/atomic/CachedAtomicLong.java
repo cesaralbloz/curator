@@ -21,54 +21,54 @@ package com.netflix.curator.framework.recipes.atomic;
  */
 public class CachedAtomicLong
 {
-    private final DistributedAtomicLong number;
-    private final long                  cacheFactor;
+	private final DistributedAtomicLong number;
+	private final long                  cacheFactor;
 
-    private AtomicValue<Long>          currentValue = null;
-    private int                        currentIndex = 0;
+	private AtomicValue<Long>          currentValue = null;
+	private int                        currentIndex = 0;
 
-    /**
-     * @param number the number to use
-     * @param cacheFactor the number of values to allocate at a time
-     */
-    public CachedAtomicLong(DistributedAtomicLong number, int cacheFactor)
-    {
-        this.number = number;
-        this.cacheFactor = cacheFactor;
-    }
+	/**
+	 * @param number the number to use
+	 * @param cacheFactor the number of values to allocate at a time
+	 */
+	public CachedAtomicLong(DistributedAtomicLong number, int cacheFactor)
+	{
+		this.number = number;
+		this.cacheFactor = cacheFactor;
+	}
 
-    /**
-     * Returns the next value (incrementing by 1). If a new chunk of numbers is needed, it is
-     * requested from the number
-     *
-     * @return next increment
-     * @throws Exception errors
-     */
-    public AtomicValue<Long>       next() throws Exception
-    {
-        MutableAtomicValue<Long> result = new MutableAtomicValue<Long>(0L, 0L);
+	/**
+	 * Returns the next value (incrementing by 1). If a new chunk of numbers is needed, it is
+	 * requested from the number
+	 *
+	 * @return next increment
+	 * @throws Exception errors
+	 */
+	public AtomicValue<Long>       next() throws Exception
+	{
+		MutableAtomicValue<Long> result = new MutableAtomicValue<Long>(0L, 0L);
 
-        if ( currentValue == null )
-        {
-            currentValue = number.add(cacheFactor);
-            if ( !currentValue.succeeded() )
-            {
-                currentValue = null;
-                result.succeeded = false;
-                return result;
-            }
-            currentIndex = 0;
-        }
+		if ( currentValue == null )
+		{
+			currentValue = number.add(cacheFactor);
+			if ( !currentValue.succeeded() )
+			{
+				currentValue = null;
+				result.succeeded = false;
+				return result;
+			}
+			currentIndex = 0;
+		}
 
-        result.succeeded = true;
-        result.preValue = currentValue.preValue() + currentIndex;
-        result.postValue = result.preValue + 1;
+		result.succeeded = true;
+		result.preValue = currentValue.preValue() + currentIndex;
+		result.postValue = result.preValue + 1;
 
-        if ( ++currentIndex >= cacheFactor )
-        {
-            currentValue = null;
-        }
+		if ( ++currentIndex >= cacheFactor )
+		{
+			currentValue = null;
+		}
 
-        return result;
-    }
+		return result;
+	}
 }

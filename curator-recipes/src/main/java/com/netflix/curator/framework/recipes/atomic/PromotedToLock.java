@@ -26,105 +26,105 @@ import java.util.concurrent.TimeUnit;
  */
 public class PromotedToLock
 {
-    private final String        path;
-    private final long          maxLockTime;
-    private final TimeUnit      maxLockTimeUnit;
-    private final RetryPolicy   retryPolicy;
+	private final String        path;
+	private final long          maxLockTime;
+	private final TimeUnit      maxLockTimeUnit;
+	private final RetryPolicy   retryPolicy;
 
-    /**
-     * Allocate a new builder
-     *
-     * @return new builder
-     */
-    public static Builder   builder()
-    {
-        return new Builder();
-    }
+	/**
+	 * Allocate a new builder
+	 *
+	 * @return new builder
+	 */
+	public static Builder   builder()
+	{
+		return new Builder();
+	}
 
-    public static class Builder
-    {
-        private PromotedToLock      instance = new PromotedToLock(null, -1, null, new RetryNTimes(0, 0));
+	public static class Builder
+	{
+		private PromotedToLock      instance = new PromotedToLock(null, -1, null, new RetryNTimes(0, 0));
 
-        /**
-         * Build the argument block
-         *
-         * @return new block
-         */
-        public PromotedToLock       build()
-        {
-            Preconditions.checkNotNull(instance.path, "path cannot be null");
-            Preconditions.checkNotNull(instance.retryPolicy, "retryPolicy cannot be null");
+		/**
+		 * Build the argument block
+		 *
+		 * @return new block
+		 */
+		public PromotedToLock       build()
+		{
+			Preconditions.checkNotNull(instance.path, "path cannot be null");
+			Preconditions.checkNotNull(instance.retryPolicy, "retryPolicy cannot be null");
 
-            return new PromotedToLock(instance.path, instance.maxLockTime, instance.maxLockTimeUnit, instance.retryPolicy);
-        }
+			return new PromotedToLock(instance.path, instance.maxLockTime, instance.maxLockTimeUnit, instance.retryPolicy);
+		}
 
-        /**
-         * Set the path for the mutex lock (required)
-         *
-         * @param path path
-         * @return this
-         */
-        public Builder          lockPath(String path)
-        {
-            instance = new PromotedToLock(path, instance.maxLockTime, instance.maxLockTimeUnit, instance.retryPolicy);
-            return this;
-        }
+		/**
+		 * Set the path for the mutex lock (required)
+		 *
+		 * @param path path
+		 * @return this
+		 */
+		public Builder          lockPath(String path)
+		{
+			instance = new PromotedToLock(path, instance.maxLockTime, instance.maxLockTimeUnit, instance.retryPolicy);
+			return this;
+		}
 
-        /**
-         * Set the retry policy to use when an operation does not succeed
-         *
-         * @param retryPolicy new policy
-         * @return this
-         */
-        public Builder          retryPolicy(RetryPolicy retryPolicy)
-        {
-            instance = new PromotedToLock(instance.path, instance.maxLockTime, instance.maxLockTimeUnit, retryPolicy);
-            return this;
-        }
+		/**
+		 * Set the retry policy to use when an operation does not succeed
+		 *
+		 * @param retryPolicy new policy
+		 * @return this
+		 */
+		public Builder          retryPolicy(RetryPolicy retryPolicy)
+		{
+			instance = new PromotedToLock(instance.path, instance.maxLockTime, instance.maxLockTimeUnit, retryPolicy);
+			return this;
+		}
 
-        /**
-         * Set the timeout to use when locking (optional)
-         *
-         * @param maxLockTime time
-         * @param maxLockTimeUnit unit
-         * @return this
-         */
-        public Builder          timeout(long maxLockTime, TimeUnit maxLockTimeUnit)
-        {
-            instance = new PromotedToLock(instance.path, maxLockTime, maxLockTimeUnit, instance.retryPolicy);
-            return this;
-        }
+		/**
+		 * Set the timeout to use when locking (optional)
+		 *
+		 * @param maxLockTime time
+		 * @param maxLockTimeUnit unit
+		 * @return this
+		 */
+		public Builder          timeout(long maxLockTime, TimeUnit maxLockTimeUnit)
+		{
+			instance = new PromotedToLock(instance.path, maxLockTime, maxLockTimeUnit, instance.retryPolicy);
+			return this;
+		}
 
-        private Builder()
-        {
-        }
-    }
+		private Builder()
+		{
+		}
+	}
 
-    String getPath()
-    {
-        return path;
-    }
+	String getPath()
+	{
+		return path;
+	}
 
-    long getMaxLockTime()
-    {
-        return maxLockTime;
-    }
+	long getMaxLockTime()
+	{
+		return maxLockTime;
+	}
 
-    TimeUnit getMaxLockTimeUnit()
-    {
-        return maxLockTimeUnit;
-    }
+	TimeUnit getMaxLockTimeUnit()
+	{
+		return maxLockTimeUnit;
+	}
 
-    RetryPolicy getRetryPolicy()
-    {
-        return retryPolicy;
-    }
+	RetryPolicy getRetryPolicy()
+	{
+		return retryPolicy;
+	}
 
-    private PromotedToLock(String path, long maxLockTime, TimeUnit maxLockTimeUnit, RetryPolicy retryPolicy)
-    {
-        this.path = path;
-        this.maxLockTime = maxLockTime;
-        this.maxLockTimeUnit = maxLockTimeUnit;
-        this.retryPolicy = retryPolicy;
-    }
+	private PromotedToLock(String path, long maxLockTime, TimeUnit maxLockTimeUnit, RetryPolicy retryPolicy)
+	{
+		this.path = path;
+		this.maxLockTime = maxLockTime;
+		this.maxLockTimeUnit = maxLockTimeUnit;
+		this.retryPolicy = retryPolicy;
+	}
 }

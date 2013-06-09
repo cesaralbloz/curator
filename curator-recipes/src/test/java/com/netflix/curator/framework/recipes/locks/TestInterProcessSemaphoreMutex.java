@@ -20,23 +20,23 @@ import org.testng.annotations.Test;
 
 public class TestInterProcessSemaphoreMutex extends TestInterProcessMutexBase
 {
-    private static final String LOCK_PATH = "/locks/our-lock";
+	private static final String LOCK_PATH = "/locks/our-lock";
 
-    @Override
-    @Test(enabled = false)
-    public void testReentrant() throws Exception
-    {
-    }
+	@Override
+	@Test(enabled = false)
+	public void testReentrant() throws Exception
+	{
+	}
 
-    @Override
-    @Test(enabled = false)
-    public void testReentrant2Threads() throws Exception
-    {
-    }
+	@Override
+	@Test(enabled = false)
+	public void testReentrant2Threads() throws Exception
+	{
+	}
 
-    @Override
-    protected InterProcessLock makeLock(CuratorFramework client)
-    {
-        return new InterProcessSemaphoreMutex(client, LOCK_PATH);
-    }
+	@Override
+	protected InterProcessLock makeLock(CuratorFramework client)
+	{
+		return new InterProcessSemaphoreMutex(client, LOCK_PATH);
+	}
 }

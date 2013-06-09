@@ -18,40 +18,40 @@ package com.netflix.curator.framework.recipes.cache;
 
 class RefreshOperation implements Operation
 {
-    private final PathChildrenCache cache;
+	private final PathChildrenCache cache;
 
-    RefreshOperation(PathChildrenCache cache)
-    {
-        this.cache = cache;
-    }
+	RefreshOperation(PathChildrenCache cache)
+	{
+		this.cache = cache;
+	}
 
-    @Override
-    public void invoke() throws Exception
-    {
-        cache.refresh(false);
-    }
+	@Override
+	public void invoke() throws Exception
+	{
+		cache.refresh(false);
+	}
 
-    @Override
-    public int hashCode()
-    {
-        return RefreshOperation.class.hashCode();
-    }
+	@Override
+	public int hashCode()
+	{
+		return RefreshOperation.class.hashCode();
+	}
 
-    @Override
-    public boolean equals(Object obj)
-    {
-        //noinspection SimplifiableIfStatement
-        if ( obj == null )
-        {
-            return false;
-        }
+	@Override
+	public boolean equals(Object obj)
+	{
+		//noinspection SimplifiableIfStatement
+		if ( obj == null )
+		{
+			return false;
+		}
 
-        return (this == obj) || (getClass().equals(obj.getClass()));
-    }
+		return (this == obj) || (getClass().equals(obj.getClass()));
+	}
 
-    @Override
-    public String toString()
-    {
-        return "RefreshOperation{}";
-    }
+	@Override
+	public String toString()
+	{
+		return "RefreshOperation{}";
+	}
 }

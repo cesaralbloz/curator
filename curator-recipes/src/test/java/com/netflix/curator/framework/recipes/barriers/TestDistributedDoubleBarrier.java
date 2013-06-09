@@ -39,200 +39,200 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestDistributedDoubleBarrier extends BaseClassForTests
 {
-    private static final int           QTY = 5;
+	private static final int           QTY = 5;
 
-    @Test
-    public void     testMultiClient() throws Exception
-    {
-        final Timing            timing = new Timing();
-        final CountDownLatch    postEnterLatch = new CountDownLatch(QTY);
-        final CountDownLatch    postLeaveLatch = new CountDownLatch(QTY);
-        final AtomicInteger     count = new AtomicInteger(0);
-        final AtomicInteger     max = new AtomicInteger(0);
-        List<Future<Void>>      futures = Lists.newArrayList();
-        ExecutorService         service = Executors.newCachedThreadPool();
-        for ( int i = 0; i < QTY; ++i )
-        {
-            Future<Void>    future = service.submit
-            (
-                new Callable<Void>()
-                {
-                    @Override
-                    public Void call() throws Exception
-                    {
-                        CuratorFramework                client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-                        try
-                        {
-                            client.start();
-                            DistributedDoubleBarrier        barrier = new DistributedDoubleBarrier(client, "/barrier", QTY);
+	@Test
+	public void     testMultiClient() throws Exception
+	{
+		final Timing            timing = new Timing();
+		final CountDownLatch    postEnterLatch = new CountDownLatch(QTY);
+		final CountDownLatch    postLeaveLatch = new CountDownLatch(QTY);
+		final AtomicInteger     count = new AtomicInteger(0);
+		final AtomicInteger     max = new AtomicInteger(0);
+		List<Future<Void>>      futures = Lists.newArrayList();
+		ExecutorService         service = Executors.newCachedThreadPool();
+		for ( int i = 0; i < QTY; ++i )
+		{
+			Future<Void>    future = service.submit
+					(
+							new Callable<Void>()
+							{
+								@Override
+								public Void call() throws Exception
+								{
+									CuratorFramework                client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+									try
+									{
+										client.start();
+										DistributedDoubleBarrier        barrier = new DistributedDoubleBarrier(client, "/barrier", QTY);
 
-                            Assert.assertTrue(barrier.enter(timing.seconds(), TimeUnit.SECONDS));
+										Assert.assertTrue(barrier.enter(timing.seconds(), TimeUnit.SECONDS));
 
-                            synchronized(TestDistributedDoubleBarrier.this)
-                            {
-                                int     thisCount = count.incrementAndGet();
-                                if ( thisCount > max.get() )
-                                {
-                                    max.set(thisCount);
-                                }
-                            }
+										synchronized(TestDistributedDoubleBarrier.this)
+										{
+											int     thisCount = count.incrementAndGet();
+											if ( thisCount > max.get() )
+											{
+												max.set(thisCount);
+											}
+										}
 
-                            postEnterLatch.countDown();
-                            Assert.assertTrue(timing.awaitLatch(postEnterLatch));
+										postEnterLatch.countDown();
+										Assert.assertTrue(timing.awaitLatch(postEnterLatch));
 
-                            Assert.assertEquals(count.get(), QTY);
+										Assert.assertEquals(count.get(), QTY);
 
-                            Assert.assertTrue(barrier.leave(timing.seconds(), TimeUnit.SECONDS));
-                            count.decrementAndGet();
+										Assert.assertTrue(barrier.leave(timing.seconds(), TimeUnit.SECONDS));
+										count.decrementAndGet();
 
-                            postLeaveLatch.countDown();
-                            Assert.assertTrue(timing.awaitLatch(postEnterLatch));
-                        }
-                        finally
-                        {
-                            Closeables.closeQuietly(client);
-                        }
+										postLeaveLatch.countDown();
+										Assert.assertTrue(timing.awaitLatch(postEnterLatch));
+									}
+									finally
+									{
+										Closeables.closeQuietly(client);
+									}
 
-                        return null;
-                    }
-                }
-            );
-            futures.add(future);
-        }
+									return null;
+								}
+							}
+							);
+			futures.add(future);
+		}
 
-        for ( Future<Void> f : futures )
-        {
-            f.get();
-        }
-        Assert.assertEquals(count.get(), 0);
-        Assert.assertEquals(max.get(), QTY);
-    }
+		for ( Future<Void> f : futures )
+		{
+			f.get();
+		}
+		Assert.assertEquals(count.get(), 0);
+		Assert.assertEquals(max.get(), QTY);
+	}
 
-    @Test
-    public void     testOverSubscribed() throws Exception
-    {
-        final Timing                    timing = new Timing();
-        final CuratorFramework          client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        ExecutorService                 service = Executors.newCachedThreadPool();
-        ExecutorCompletionService<Void> completionService = new ExecutorCompletionService<Void>(service);
-        try
-        {
-            client.start();
+	@Test
+	public void     testOverSubscribed() throws Exception
+	{
+		final Timing                    timing = new Timing();
+		final CuratorFramework          client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		ExecutorService                 service = Executors.newCachedThreadPool();
+		ExecutorCompletionService<Void> completionService = new ExecutorCompletionService<Void>(service);
+		try
+		{
+			client.start();
 
-            final Semaphore         semaphore = new Semaphore(0);
-            final CountDownLatch    latch = new CountDownLatch(1);
-            for ( int i = 0; i < (QTY + 1); ++i )
-            {
-                completionService.submit
-                (
-                    new Callable<Void>()
-                    {
-                        @Override
-                        public Void call() throws Exception
-                        {
-                            DistributedDoubleBarrier        barrier = new DistributedDoubleBarrier(client, "/barrier", QTY)
-                            {
-                                @Override
-                                protected List<String> getChildrenForEntering() throws Exception
-                                {
-                                    semaphore.release();
-                                    Assert.assertTrue(timing.awaitLatch(latch));
-                                    return super.getChildrenForEntering();
-                                }
-                            };
-                            Assert.assertTrue(barrier.enter(timing.seconds(), TimeUnit.SECONDS));
-                            Assert.assertTrue(barrier.leave(timing.seconds(), TimeUnit.SECONDS));
-                            return null;
-                        }
-                    }
-                );
-            }
+			final Semaphore         semaphore = new Semaphore(0);
+			final CountDownLatch    latch = new CountDownLatch(1);
+			for ( int i = 0; i < (QTY + 1); ++i )
+			{
+				completionService.submit
+				(
+						new Callable<Void>()
+						{
+							@Override
+							public Void call() throws Exception
+							{
+								DistributedDoubleBarrier        barrier = new DistributedDoubleBarrier(client, "/barrier", QTY)
+								{
+									@Override
+									protected List<String> getChildrenForEntering() throws Exception
+									{
+										semaphore.release();
+										Assert.assertTrue(timing.awaitLatch(latch));
+										return super.getChildrenForEntering();
+									}
+								};
+								Assert.assertTrue(barrier.enter(timing.seconds(), TimeUnit.SECONDS));
+								Assert.assertTrue(barrier.leave(timing.seconds(), TimeUnit.SECONDS));
+								return null;
+							}
+						}
+						);
+			}
 
-            Assert.assertTrue(semaphore.tryAcquire(QTY + 1, timing.seconds(), TimeUnit.SECONDS));   // wait until all QTY+1 barriers are trying to enter
-            latch.countDown();
+			Assert.assertTrue(semaphore.tryAcquire(QTY + 1, timing.seconds(), TimeUnit.SECONDS));   // wait until all QTY+1 barriers are trying to enter
+			latch.countDown();
 
-            for ( int i = 0; i < (QTY + 1); ++i )
-            {
-                completionService.take().get(); // to check for assertions
-            }
-        }
-        finally
-        {
-            service.shutdown();
-            Closeables.closeQuietly(client);
-        }
-    }
+			for ( int i = 0; i < (QTY + 1); ++i )
+			{
+				completionService.take().get(); // to check for assertions
+			}
+		}
+		finally
+		{
+			service.shutdown();
+			Closeables.closeQuietly(client);
+		}
+	}
 
-    @Test
-    public void     testBasic() throws Exception
-    {
-        final Timing              timing = new Timing();
-        final List<Closeable>     closeables = Lists.newArrayList();
-        final CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        try
-        {
-            closeables.add(client);
-            client.start();
+	@Test
+	public void     testBasic() throws Exception
+	{
+		final Timing              timing = new Timing();
+		final List<Closeable>     closeables = Lists.newArrayList();
+		final CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		try
+		{
+			closeables.add(client);
+			client.start();
 
-            final CountDownLatch    postEnterLatch = new CountDownLatch(QTY);
-            final CountDownLatch    postLeaveLatch = new CountDownLatch(QTY);
-            final AtomicInteger     count = new AtomicInteger(0);
-            final AtomicInteger     max = new AtomicInteger(0);
-            List<Future<Void>>      futures = Lists.newArrayList();
-            ExecutorService         service = Executors.newCachedThreadPool();
-            for ( int i = 0; i < QTY; ++i )
-            {
-                Future<Void>    future = service.submit
-                (
-                    new Callable<Void>()
-                    {
-                        @Override
-                        public Void call() throws Exception
-                        {
-                            DistributedDoubleBarrier        barrier = new DistributedDoubleBarrier(client, "/barrier", QTY);
+			final CountDownLatch    postEnterLatch = new CountDownLatch(QTY);
+			final CountDownLatch    postLeaveLatch = new CountDownLatch(QTY);
+			final AtomicInteger     count = new AtomicInteger(0);
+			final AtomicInteger     max = new AtomicInteger(0);
+			List<Future<Void>>      futures = Lists.newArrayList();
+			ExecutorService         service = Executors.newCachedThreadPool();
+			for ( int i = 0; i < QTY; ++i )
+			{
+				Future<Void>    future = service.submit
+						(
+								new Callable<Void>()
+								{
+									@Override
+									public Void call() throws Exception
+									{
+										DistributedDoubleBarrier        barrier = new DistributedDoubleBarrier(client, "/barrier", QTY);
 
-                            Assert.assertTrue(barrier.enter(timing.seconds(), TimeUnit.SECONDS));
+										Assert.assertTrue(barrier.enter(timing.seconds(), TimeUnit.SECONDS));
 
-                            synchronized(TestDistributedDoubleBarrier.this)
-                            {
-                                int     thisCount = count.incrementAndGet();
-                                if ( thisCount > max.get() )
-                                {
-                                    max.set(thisCount);
-                                }
-                            }
+										synchronized(TestDistributedDoubleBarrier.this)
+										{
+											int     thisCount = count.incrementAndGet();
+											if ( thisCount > max.get() )
+											{
+												max.set(thisCount);
+											}
+										}
 
-                            postEnterLatch.countDown();
-                            Assert.assertTrue(timing.awaitLatch(postEnterLatch));
+										postEnterLatch.countDown();
+										Assert.assertTrue(timing.awaitLatch(postEnterLatch));
 
-                            Assert.assertEquals(count.get(), QTY);
+										Assert.assertEquals(count.get(), QTY);
 
-                            Assert.assertTrue(barrier.leave(10, TimeUnit.SECONDS));
-                            count.decrementAndGet();
+										Assert.assertTrue(barrier.leave(10, TimeUnit.SECONDS));
+										count.decrementAndGet();
 
-                            postLeaveLatch.countDown();
-                            Assert.assertTrue(timing.awaitLatch(postLeaveLatch));
+										postLeaveLatch.countDown();
+										Assert.assertTrue(timing.awaitLatch(postLeaveLatch));
 
-                            return null;
-                        }
-                    }
-                );
-                futures.add(future);
-            }
+										return null;
+									}
+								}
+								);
+				futures.add(future);
+			}
 
-            for ( Future<Void> f : futures )
-            {
-                f.get();
-            }
-            Assert.assertEquals(count.get(), 0);
-            Assert.assertEquals(max.get(), QTY);
-        }
-        finally
-        {
-            for ( Closeable c : closeables )
-            {
-                Closeables.closeQuietly(c);
-            }
-        }
-    }
+			for ( Future<Void> f : futures )
+			{
+				f.get();
+			}
+			Assert.assertEquals(count.get(), 0);
+			Assert.assertEquals(max.get(), QTY);
+		}
+		finally
+		{
+			for ( Closeable c : closeables )
+			{
+				Closeables.closeQuietly(c);
+			}
+		}
+	}
 }

@@ -23,11 +23,11 @@ import com.netflix.curator.framework.state.ConnectionStateListener;
  */
 public interface QueueConsumer<T> extends ConnectionStateListener
 {
-    /**
-     * Process a message from the queue
-     *
-     * @param message message to process
-     * @throws Exception any errors
-     */
-    public void         consumeMessage(T message) throws Exception;
+	/**
+	 * Process a message from the queue
+	 *
+	 * @param message message to process
+	 * @throws Exception any errors
+	 */
+	public void         consumeMessage(T message) throws Exception;
 }

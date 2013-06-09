@@ -18,7 +18,7 @@
 package com.netflix.curator.framework.api;
 
 public interface CreateModalPathAndBytesable<T> extends
-    CreateModable<PathAndBytesable<T>>,
-    PathAndBytesable<T>
+CreateModable<PathAndBytesable<T>>,
+PathAndBytesable<T>
 {
 }

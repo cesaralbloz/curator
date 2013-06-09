@@ -12,7 +12,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.CountDownLatch;
 
 public class TestingZooKeeperMain extends ZooKeeperServerMain implements
-		ZooKeeperMainFace {
+ZooKeeperMainFace {
 	private final CountDownLatch latch = new CountDownLatch(1);
 
 	private static final int MAX_WAIT_MS = 1000;

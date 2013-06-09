@@ -22,77 +22,77 @@ import com.netflix.curator.framework.state.ConnectionState;
  */
 public class PathChildrenCacheEvent
 {
-    private final Type type;
-    private final ChildData data;
+	private final Type type;
+	private final ChildData data;
 
-    /**
-     * Type of change
-     */
-    public enum Type
-    {
-        /**
-         * A child was added to the path
-         */
-        CHILD_ADDED,
+	/**
+	 * Type of change
+	 */
+	public enum Type
+	{
+		/**
+		 * A child was added to the path
+		 */
+		CHILD_ADDED,
 
-        /**
-         * A child's data was changed
-         */
-        CHILD_UPDATED,
+		/**
+		 * A child's data was changed
+		 */
+		CHILD_UPDATED,
 
-        /**
-         * A child was removed from the path
-         */
-        CHILD_REMOVED,
+		/**
+		 * A child was removed from the path
+		 */
+		CHILD_REMOVED,
 
-        /**
-         * Called when the connection has changed to {@link ConnectionState#SUSPENDED}
-         */
-        CONNECTION_SUSPENDED,
+		/**
+		 * Called when the connection has changed to {@link ConnectionState#SUSPENDED}
+		 */
+		CONNECTION_SUSPENDED,
 
-        /**
-         * Called when the connection has changed to {@link ConnectionState#RECONNECTED}
-         */
-        CONNECTION_RECONNECTED,
+		/**
+		 * Called when the connection has changed to {@link ConnectionState#RECONNECTED}
+		 */
+		CONNECTION_RECONNECTED,
 
-        /**
-         * Called when the connection has changed to {@link ConnectionState#LOST}
-         */
-        CONNECTION_LOST
-    }
+		/**
+		 * Called when the connection has changed to {@link ConnectionState#LOST}
+		 */
+		CONNECTION_LOST
+	}
 
-    /**
-     * @param type event type
-     * @param data event data or null
-     */
-    public PathChildrenCacheEvent(Type type, ChildData data)
-    {
-        this.type = type;
-        this.data = data;
-    }
+	/**
+	 * @param type event type
+	 * @param data event data or null
+	 */
+	public PathChildrenCacheEvent(Type type, ChildData data)
+	{
+		this.type = type;
+		this.data = data;
+	}
 
-    /**
-     * @return change type
-     */
-    public Type getType()
-    {
-        return type;
-    }
+	/**
+	 * @return change type
+	 */
+	public Type getType()
+	{
+		return type;
+	}
 
-    /**
-     * @return the node's data
-     */
-    public ChildData getData()
-    {
-        return data;
-    }
+	/**
+	 * @return the node's data
+	 */
+	public ChildData getData()
+	{
+		return data;
+	}
 
-    @Override
-    public String toString()
-    {
-        return "PathChildrenCacheEvent{" +
-            "type=" + type +
-            ", data=" + data +
-            '}';
-    }
+	@Override
+	public String toString()
+	{
+		return "PathChildrenCacheEvent{" +
+				"type=" + type +
+				", data=" + data +
+				'}';
+	}
 }

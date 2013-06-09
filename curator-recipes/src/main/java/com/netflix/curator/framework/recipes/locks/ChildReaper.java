@@ -38,122 +38,122 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ChildReaper implements Closeable
 {
-    private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Reaper reaper;
-    private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
-    private final CuratorFramework client;
-    private final String path;
-    private final Reaper.Mode mode;
-    private final ScheduledExecutorService executor;
-    private final int reapingThresholdMs;
+	private final Logger log = LoggerFactory.getLogger(getClass());
+	private final Reaper reaper;
+	private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
+	private final CuratorFramework client;
+	private final String path;
+	private final Reaper.Mode mode;
+	private final ScheduledExecutorService executor;
+	private final int reapingThresholdMs;
 
-    private volatile ScheduledFuture<?> task;
+	private volatile ScheduledFuture<?> task;
 
-    private enum State
-    {
-        LATENT,
-        STARTED,
-        CLOSED
-    }
+	private enum State
+	{
+		LATENT,
+		STARTED,
+		CLOSED
+	}
 
-    /**
-     * @param client the client
-     * @param path path to reap children from
-     * @param mode reaping mode
-     */
-    public ChildReaper(CuratorFramework client, String path, Reaper.Mode mode)
-    {
-        this(client, path, mode, newExecutorService(), Reaper.DEFAULT_REAPING_THRESHOLD_MS);
-    }
+	/**
+	 * @param client the client
+	 * @param path path to reap children from
+	 * @param mode reaping mode
+	 */
+	public ChildReaper(CuratorFramework client, String path, Reaper.Mode mode)
+	{
+		this(client, path, mode, newExecutorService(), Reaper.DEFAULT_REAPING_THRESHOLD_MS);
+	}
 
-    /**
-     * @param client the client
-     * @param path path to reap children from
-     * @param reapingThresholdMs threshold in milliseconds that determines that a path can be deleted
-     * @param mode reaping mode
-     */
-    public ChildReaper(CuratorFramework client, String path, Reaper.Mode mode, int reapingThresholdMs)
-    {
-        this(client, path, mode, newExecutorService(), reapingThresholdMs);
-    }
+	/**
+	 * @param client the client
+	 * @param path path to reap children from
+	 * @param reapingThresholdMs threshold in milliseconds that determines that a path can be deleted
+	 * @param mode reaping mode
+	 */
+	public ChildReaper(CuratorFramework client, String path, Reaper.Mode mode, int reapingThresholdMs)
+	{
+		this(client, path, mode, newExecutorService(), reapingThresholdMs);
+	}
 
-    /**
-     * @param client the client
-     * @param path path to reap children from
-     * @param executor executor to use for background tasks
-     * @param reapingThresholdMs threshold in milliseconds that determines that a path can be deleted
-     * @param mode reaping mode
-     */
-    public ChildReaper(CuratorFramework client, String path, Reaper.Mode mode, ScheduledExecutorService executor, int reapingThresholdMs)
-    {
-        this.client = client;
-        this.path = path;
-        this.mode = mode;
-        this.executor = executor;
-        this.reapingThresholdMs = reapingThresholdMs;
-        this.reaper = new Reaper(client, executor, reapingThresholdMs);
-    }
+	/**
+	 * @param client the client
+	 * @param path path to reap children from
+	 * @param executor executor to use for background tasks
+	 * @param reapingThresholdMs threshold in milliseconds that determines that a path can be deleted
+	 * @param mode reaping mode
+	 */
+	public ChildReaper(CuratorFramework client, String path, Reaper.Mode mode, ScheduledExecutorService executor, int reapingThresholdMs)
+	{
+		this.client = client;
+		this.path = path;
+		this.mode = mode;
+		this.executor = executor;
+		this.reapingThresholdMs = reapingThresholdMs;
+		this.reaper = new Reaper(client, executor, reapingThresholdMs);
+	}
 
-    /**
-     * The reaper must be started
-     *
-     * @throws Exception errors
-     */
-    public void start() throws Exception
-    {
-        Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED), "Already started");
+	/**
+	 * The reaper must be started
+	 *
+	 * @throws Exception errors
+	 */
+	public void start() throws Exception
+	{
+		Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED), "Already started");
 
-        task = executor.scheduleWithFixedDelay
-        (
-            new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    doWork();
-                }
-            },
-            reapingThresholdMs,
-            reapingThresholdMs,
-            TimeUnit.MILLISECONDS
-        );
+		task = executor.scheduleWithFixedDelay
+				(
+						new Runnable()
+						{
+							@Override
+							public void run()
+							{
+								doWork();
+							}
+						},
+						reapingThresholdMs,
+						reapingThresholdMs,
+						TimeUnit.MILLISECONDS
+						);
 
-        reaper.start();
-    }
+		reaper.start();
+	}
 
-    @Override
-    public void close() throws IOException
-    {
-        if ( state.compareAndSet(State.STARTED, State.CLOSED) )
-        {
-            Closeables.closeQuietly(reaper);
-            task.cancel(true);
-        }
-    }
+	@Override
+	public void close() throws IOException
+	{
+		if ( state.compareAndSet(State.STARTED, State.CLOSED) )
+		{
+			Closeables.closeQuietly(reaper);
+			task.cancel(true);
+		}
+	}
 
-    private static ScheduledExecutorService newExecutorService()
-    {
-        return ThreadUtils.newFixedThreadScheduledPool(2, "ChildReaper");
-    }
+	private static ScheduledExecutorService newExecutorService()
+	{
+		return ThreadUtils.newFixedThreadScheduledPool(2, "ChildReaper");
+	}
 
-    private void doWork()
-    {
-        try
-        {
-            List<String>        children = client.getChildren().forPath(path);
-            for ( String name : children )
-            {
-                String  thisPath = ZKPaths.makePath(path, name);
-                Stat    stat = client.checkExists().forPath(thisPath);
-                if ( (stat != null) && (stat.getNumChildren() == 0) )
-                {
-                    reaper.addPath(thisPath, mode);
-                }
-            }
-        }
-        catch ( Exception e )
-        {
-            log.error("Could not get children for path: " + path, e);
-        }
-    }
+	private void doWork()
+	{
+		try
+		{
+			List<String>        children = client.getChildren().forPath(path);
+			for ( String name : children )
+			{
+				String  thisPath = ZKPaths.makePath(path, name);
+				Stat    stat = client.checkExists().forPath(thisPath);
+				if ( (stat != null) && (stat.getNumChildren() == 0) )
+				{
+					reaper.addPath(thisPath, mode);
+				}
+			}
+		}
+		catch ( Exception e )
+		{
+			log.error("Could not get children for path: " + path, e);
+		}
+	}
 }

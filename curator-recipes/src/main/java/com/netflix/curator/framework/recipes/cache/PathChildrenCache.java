@@ -61,487 +61,487 @@ import java.util.concurrent.ThreadFactory;
  */
 public class PathChildrenCache implements Closeable
 {
-    private final Logger                    log = LoggerFactory.getLogger(getClass());
-    private final CuratorFramework          client;
-    private final String                    path;
-    private final ExecutorService           executorService;
-    private final boolean                   cacheData;
-    private final boolean                   dataIsCompressed;
-    private final EnsurePath                ensurePath;
-    private final BlockingQueue<Operation>                      operations = new LinkedBlockingQueue<Operation>();
-    private final ListenerContainer<PathChildrenCacheListener>  listeners = new ListenerContainer<PathChildrenCacheListener>();
-    private final ConcurrentMap<String, ChildData>              currentData = Maps.newConcurrentMap();
+	private final Logger                    log = LoggerFactory.getLogger(getClass());
+	private final CuratorFramework          client;
+	private final String                    path;
+	private final ExecutorService           executorService;
+	private final boolean                   cacheData;
+	private final boolean                   dataIsCompressed;
+	private final EnsurePath                ensurePath;
+	private final BlockingQueue<Operation>                      operations = new LinkedBlockingQueue<Operation>();
+	private final ListenerContainer<PathChildrenCacheListener>  listeners = new ListenerContainer<PathChildrenCacheListener>();
+	private final ConcurrentMap<String, ChildData>              currentData = Maps.newConcurrentMap();
 
-    private final Watcher     childrenWatcher = new Watcher()
-    {
-        @Override
-        public void process(WatchedEvent event)
-        {
-            offerOperation(new RefreshOperation(PathChildrenCache.this));
-        }
-    };
+	private final Watcher     childrenWatcher = new Watcher()
+	{
+		@Override
+		public void process(WatchedEvent event)
+		{
+			offerOperation(new RefreshOperation(PathChildrenCache.this));
+		}
+	};
 
-    private final Watcher     dataWatcher = new Watcher()
-    {
-        @Override
-        public void process(WatchedEvent event)
-        {
-            try
-            {
-                if ( event.getType() == Event.EventType.NodeDeleted )
-                {
-                    remove(event.getPath());
-                }
-                else if ( event.getType() == Event.EventType.NodeDataChanged )
-                {
-                    offerOperation(new GetDataOperation(PathChildrenCache.this, event.getPath()));
-                }
-            }
-            catch ( Exception e )
-            {
-                handleException(e);
-            }
-        }
-    };
+	private final Watcher     dataWatcher = new Watcher()
+	{
+		@Override
+		public void process(WatchedEvent event)
+		{
+			try
+			{
+				if ( event.getType() == Event.EventType.NodeDeleted )
+				{
+					remove(event.getPath());
+				}
+				else if ( event.getType() == Event.EventType.NodeDataChanged )
+				{
+					offerOperation(new GetDataOperation(PathChildrenCache.this, event.getPath()));
+				}
+			}
+			catch ( Exception e )
+			{
+				handleException(e);
+			}
+		}
+	};
 
-    @VisibleForTesting
-    volatile Exchanger<Object>      rebuildTestExchanger;
+	@VisibleForTesting
+	volatile Exchanger<Object>      rebuildTestExchanger;
 
-    private final ConnectionStateListener connectionStateListener = new ConnectionStateListener()
-    {
-        @Override
-        public void stateChanged(CuratorFramework client, ConnectionState newState)
-        {
-            handleStateChange(newState);
-        }
-    };
-    private static final ThreadFactory defaultThreadFactory = ThreadUtils.newThreadFactory("PathChildrenCache");
+	private final ConnectionStateListener connectionStateListener = new ConnectionStateListener()
+	{
+		@Override
+		public void stateChanged(CuratorFramework client, ConnectionState newState)
+		{
+			handleStateChange(newState);
+		}
+	};
+	private static final ThreadFactory defaultThreadFactory = ThreadUtils.newThreadFactory("PathChildrenCache");
 
-    /**
-     * @param client the client
-     * @param path path to watch
-     * @param mode caching mode
-     *
-     * @deprecated use {@link #PathChildrenCache(CuratorFramework, String, boolean)} instead
-     */
-    @SuppressWarnings("deprecation")
-    public PathChildrenCache(CuratorFramework client, String path, PathChildrenCacheMode mode)
-    {
-        this(client, path, mode != PathChildrenCacheMode.CACHE_PATHS_ONLY, false, defaultThreadFactory);
-    }
+	/**
+	 * @param client the client
+	 * @param path path to watch
+	 * @param mode caching mode
+	 *
+	 * @deprecated use {@link #PathChildrenCache(CuratorFramework, String, boolean)} instead
+	 */
+	 public PathChildrenCache(CuratorFramework client, String path, PathChildrenCacheMode mode)
+	 {
+		 this(client, path, mode != PathChildrenCacheMode.CACHE_PATHS_ONLY, false, defaultThreadFactory);
+	 }
 
-    /**
-     * @param client the client
-     * @param path path to watch
-     * @param mode caching mode
-     * @param threadFactory factory to use when creating internal threads
-     *
-     * @deprecated use {@link #PathChildrenCache(CuratorFramework, String, boolean, ThreadFactory)} instead
-     */
-    @SuppressWarnings("deprecation")
-    public PathChildrenCache(CuratorFramework client, String path, PathChildrenCacheMode mode, ThreadFactory threadFactory)
-    {
-        this(client, path, mode != PathChildrenCacheMode.CACHE_PATHS_ONLY, false, threadFactory);
-    }
+	 /**
+	  * @param client the client
+	  * @param path path to watch
+	  * @param mode caching mode
+	  * @param threadFactory factory to use when creating internal threads
+	  *
+	  * @deprecated use {@link #PathChildrenCache(CuratorFramework, String, boolean, ThreadFactory)} instead
+	  */
+	 public PathChildrenCache(CuratorFramework client, String path, PathChildrenCacheMode mode, ThreadFactory threadFactory)
+	 {
+		 this(client, path, mode != PathChildrenCacheMode.CACHE_PATHS_ONLY, false, threadFactory);
+	 }
 
-    /**
-     * @param client the client
-     * @param path path to watch
-     * @param cacheData if true, node contents are cached in addition to the stat
-     */
-    public PathChildrenCache(CuratorFramework client, String path, boolean cacheData)
-    {
-        this(client, path, cacheData, false, defaultThreadFactory);
-    }
+	 /**
+	  * @param client the client
+	  * @param path path to watch
+	  * @param cacheData if true, node contents are cached in addition to the stat
+	  */
+	 public PathChildrenCache(CuratorFramework client, String path, boolean cacheData)
+	 {
+		 this(client, path, cacheData, false, defaultThreadFactory);
+	 }
 
-    /**
-     * @param client the client
-     * @param path path to watch
-     * @param cacheData if true, node contents are cached in addition to the stat
-     * @param threadFactory factory to use when creating internal threads
-     */
-    public PathChildrenCache(CuratorFramework client, String path, boolean cacheData, ThreadFactory threadFactory)
-    {
-        this(client, path, cacheData, false, threadFactory);
-    }
+	 /**
+	  * @param client the client
+	  * @param path path to watch
+	  * @param cacheData if true, node contents are cached in addition to the stat
+	  * @param threadFactory factory to use when creating internal threads
+	  */
+	 public PathChildrenCache(CuratorFramework client, String path, boolean cacheData, ThreadFactory threadFactory)
+	 {
+		 this(client, path, cacheData, false, threadFactory);
+	 }
 
-    /**
-     * @param client the client
-     * @param path path to watch
-     * @param cacheData if true, node contents are cached in addition to the stat
-     * @param dataIsCompressed if true, data in the path is compressed
-     * @param threadFactory factory to use when creating internal threads
-     */
-    public PathChildrenCache(CuratorFramework client, String path, boolean cacheData, boolean dataIsCompressed, ThreadFactory threadFactory)
-    {
-        this.client = client;
-        this.path = path;
-        this.cacheData = cacheData;
-        this.dataIsCompressed = dataIsCompressed;
-        executorService = Executors.newFixedThreadPool(1, threadFactory);
-        ensurePath = client.newNamespaceAwareEnsurePath(path);
-    }
+	 /**
+	  * @param client the client
+	  * @param path path to watch
+	  * @param cacheData if true, node contents are cached in addition to the stat
+	  * @param dataIsCompressed if true, data in the path is compressed
+	  * @param threadFactory factory to use when creating internal threads
+	  */
+	 public PathChildrenCache(CuratorFramework client, String path, boolean cacheData, boolean dataIsCompressed, ThreadFactory threadFactory)
+	 {
+		 this.client = client;
+		 this.path = path;
+		 this.cacheData = cacheData;
+		 this.dataIsCompressed = dataIsCompressed;
+		 executorService = Executors.newFixedThreadPool(1, threadFactory);
+		 ensurePath = client.newNamespaceAwareEnsurePath(path);
+	 }
 
-    /**
-     * Start the cache. The cache is not started automatically. You must call this method.
-     *
-     * @throws Exception errors
-     */
-    public void     start() throws Exception
-    {
-        start(false);
-    }
+	 /**
+	  * Start the cache. The cache is not started automatically. You must call this method.
+	  *
+	  * @throws Exception errors
+	  */
+	 public void     start() throws Exception
+	 {
+		 start(false);
+	 }
 
-    /**
-     * Same as {@link #start()} but gives the option of doing an initial build
-     *
-     * @param buildInitial if true, {@link #rebuild()} will be called before this method
-     *                     returns in order to get an initial view of the node
-     * @throws Exception errors
-     */
-    public void     start(boolean buildInitial) throws Exception
-    {
-        Preconditions.checkState(!executorService.isShutdown(), "already started");
+	 /**
+	  * Same as {@link #start()} but gives the option of doing an initial build
+	  *
+	  * @param buildInitial if true, {@link #rebuild()} will be called before this method
+	  *                     returns in order to get an initial view of the node
+	  * @throws Exception errors
+	  */
+	 public void     start(boolean buildInitial) throws Exception
+	 {
+		 Preconditions.checkState(!executorService.isShutdown(), "already started");
 
-        client.getConnectionStateListenable().addListener(connectionStateListener);
-        executorService.submit
-        (
-            new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    mainLoop();
-                    return null;
-                }
-            }
-        );
+		 client.getConnectionStateListenable().addListener(connectionStateListener);
+		 executorService.submit
+		 (
+				 new Callable<Void>()
+				 {
+					 @Override
+					 public Void call() throws Exception
+					 {
+						 mainLoop();
+						 return null;
+					 }
+				 }
+				 );
 
-        if ( buildInitial )
-        {
-            rebuild();
-        }
-        else
-        {
-            offerOperation(new RefreshOperation(this));
-        }
-    }
+		 if ( buildInitial )
+		 {
+			 rebuild();
+		 }
+		 else
+		 {
+			 offerOperation(new RefreshOperation(this));
+		 }
+	 }
 
-    /**
-     * NOTE: this is a BLOCKING method. Completely rebuild the internal cache by querying
-     * for all needed data WITHOUT generating any events to send to listeners.
-     *
-     * @throws Exception errors
-     */
-    public void     rebuild() throws Exception
-    {
-        Preconditions.checkState(!executorService.isShutdown(), "cache has been closed");
+	 /**
+	  * NOTE: this is a BLOCKING method. Completely rebuild the internal cache by querying
+	  * for all needed data WITHOUT generating any events to send to listeners.
+	  *
+	  * @throws Exception errors
+	  */
+	 public void     rebuild() throws Exception
+	 {
+		 Preconditions.checkState(!executorService.isShutdown(), "cache has been closed");
 
-        ensurePath.ensure(client.getZookeeperClient());
+		 ensurePath.ensure(client.getZookeeperClient());
 
-        List<String>            children = client.getChildren().forPath(path);
-        for ( String child : children )
-        {
-            String  fullPath = ZKPaths.makePath(path, child);
-            if ( cacheData )
-            {
-                try
-                {
-                    Stat        stat = new Stat();
-                    byte[]      bytes = dataIsCompressed ? client.getData().decompressed().storingStatIn(stat).forPath(fullPath) : client.getData().storingStatIn(stat).forPath(fullPath);
-                    currentData.put(fullPath, new ChildData(fullPath, stat, bytes));
-                }
-                catch ( KeeperException.NoNodeException ignore )
-                {
-                    // ignore
-                }
-            }
-            else
-            {
-                Stat        stat = client.checkExists().forPath(fullPath);
-                if ( stat != null )
-                {
-                    currentData.put(fullPath, new ChildData(fullPath, stat, null));
-                }
-            }
+		 List<String>            children = client.getChildren().forPath(path);
+		 for ( String child : children )
+		 {
+			 String  fullPath = ZKPaths.makePath(path, child);
+			 if ( cacheData )
+			 {
+				 try
+				 {
+					 Stat        stat = new Stat();
+					 byte[]      bytes = dataIsCompressed ? client.getData().decompressed().storingStatIn(stat).forPath(fullPath) : client.getData().storingStatIn(stat).forPath(fullPath);
+					 currentData.put(fullPath, new ChildData(fullPath, stat, bytes));
+				 }
+				 catch ( KeeperException.NoNodeException ignore )
+				 {
+					 // ignore
+				 }
+			 }
+			 else
+			 {
+				 Stat        stat = client.checkExists().forPath(fullPath);
+				 if ( stat != null )
+				 {
+					 currentData.put(fullPath, new ChildData(fullPath, stat, null));
+				 }
+			 }
 
-            if ( rebuildTestExchanger != null )
-            {
-                rebuildTestExchanger.exchange(new Object());
-            }
-        }
+			 if ( rebuildTestExchanger != null )
+			 {
+				 rebuildTestExchanger.exchange(new Object());
+			 }
+		 }
 
-        // this is necessary so that any updates that occurred while rebuilding are taken
-        offerOperation(new ForceRefreshOperation(this));
-    }
+		 // this is necessary so that any updates that occurred while rebuilding are taken
+		 offerOperation(new ForceRefreshOperation(this));
+	 }
 
-    /**
-     * Close/end the cache
-     *
-     * @throws IOException errors
-     */
-    @Override
-    public void close() throws IOException
-    {
-        Preconditions.checkState(!executorService.isShutdown(), "has not been started");
+	 /**
+	  * Close/end the cache
+	  *
+	  * @throws IOException errors
+	  */
+	 @Override
+	 public void close() throws IOException
+	 {
+		 Preconditions.checkState(!executorService.isShutdown(), "has not been started");
 
-        client.getConnectionStateListenable().removeListener(connectionStateListener);
-        executorService.shutdownNow();
-    }
+		 client.getConnectionStateListenable().removeListener(connectionStateListener);
+		 executorService.shutdownNow();
+	 }
 
-    /**
-     * Return the cache listenable
-     *
-     * @return listenable
-     */
-    public ListenerContainer<PathChildrenCacheListener> getListenable()
-    {
-        return listeners;
-    }
+	 /**
+	  * Return the cache listenable
+	  *
+	  * @return listenable
+	  */
+	 public ListenerContainer<PathChildrenCacheListener> getListenable()
+	 {
+		 return listeners;
+	 }
 
-    /**
-     * Return the current data. There are no guarantees of accuracy. This is
-     * merely the most recent view of the data. The data is returned in sorted order.
-     *
-     * @return list of children and data
-     */
-    public List<ChildData>      getCurrentData()
-    {
-        return ImmutableList.copyOf(Sets.<ChildData>newTreeSet(currentData.values()));
-    }
+	 /**
+	  * Return the current data. There are no guarantees of accuracy. This is
+	  * merely the most recent view of the data. The data is returned in sorted order.
+	  *
+	  * @return list of children and data
+	  */
+	 public List<ChildData>      getCurrentData()
+	 {
+		 return ImmutableList.copyOf(Sets.<ChildData>newTreeSet(currentData.values()));
+	 }
 
-    /**
-     * Return the current data for the given path. There are no guarantees of accuracy. This is
-     * merely the most recent view of the data. If there is no child with that path, <code>null</code>
-     * is returned.
-     *
-     * @param fullPath full path to the node to check
-     * @return data or null
-     */
-    public ChildData            getCurrentData(String fullPath)
-    {
-        return currentData.get(fullPath);
-    }
+	 /**
+	  * Return the current data for the given path. There are no guarantees of accuracy. This is
+	  * merely the most recent view of the data. If there is no child with that path, <code>null</code>
+	  * is returned.
+	  *
+	  * @param fullPath full path to the node to check
+	  * @return data or null
+	  */
+	 public ChildData            getCurrentData(String fullPath)
+	 {
+		 return currentData.get(fullPath);
+	 }
 
-    /**
-     * Clear out current data and begin a new query on the path
-     *
-     * @throws Exception errors
-     */
-    public void clearAndRefresh() throws Exception
-    {
-        currentData.clear();
-        offerOperation(new RefreshOperation(this));
-    }
+	 /**
+	  * Clear out current data and begin a new query on the path
+	  *
+	  * @throws Exception errors
+	  */
+	 public void clearAndRefresh() throws Exception
+	 {
+		 currentData.clear();
+		 offerOperation(new RefreshOperation(this));
+	 }
 
-    /**
-     * Clears the current data without beginning a new query and without generating any events
-     * for listeners.
-     */
-    public void clear()
-    {
-        currentData.clear();
-    }
+	 /**
+	  * Clears the current data without beginning a new query and without generating any events
+	  * for listeners.
+	  */
+	 public void clear()
+	 {
+		 currentData.clear();
+	 }
 
-    void refresh(final boolean forceGetDataAndStat) throws Exception
-    {
-        ensurePath.ensure(client.getZookeeperClient());
+	 void refresh(final boolean forceGetDataAndStat) throws Exception
+	 {
+		 ensurePath.ensure(client.getZookeeperClient());
 
-        final BackgroundCallback  callback = new BackgroundCallback()
-        {
-            @Override
-            public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
-            {
-                processChildren(event.getChildren(), forceGetDataAndStat);
-            }
-        };
+		 final BackgroundCallback  callback = new BackgroundCallback()
+		 {
+			 @Override
+			 public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
+			 {
+				 processChildren(event.getChildren(), forceGetDataAndStat);
+			 }
+		 };
 
-        client.getChildren().usingWatcher(childrenWatcher).inBackground(callback).forPath(path);
-    }
+		 client.getChildren().usingWatcher(childrenWatcher).inBackground(callback).forPath(path);
+	 }
 
-    void callListeners(final PathChildrenCacheEvent event)
-    {
-        listeners.forEach
-            (
-                new Function<PathChildrenCacheListener, Void>()
-                {
-                    @Override
-                    public Void apply(PathChildrenCacheListener listener)
-                    {
-                        try
-                        {
-                            listener.childEvent(client, event);
-                        }
-                        catch ( Exception e )
-                        {
-                            handleException(e);
-                        }
-                        return null;
-                    }
-                }
-            );
-    }
+	 void callListeners(final PathChildrenCacheEvent event)
+	 {
+		 listeners.forEach
+		 (
+				 new Function<PathChildrenCacheListener, Void>()
+				 {
+					 @Override
+					 public Void apply(PathChildrenCacheListener listener)
+					 {
+						 try
+						 {
+							 listener.childEvent(client, event);
+						 }
+						 catch ( Exception e )
+						 {
+							 handleException(e);
+						 }
+						 return null;
+					 }
+				 }
+				 );
+	 }
 
-    void getDataAndStat(final String fullPath) throws Exception
-    {
-        BackgroundCallback  existsCallback = new BackgroundCallback()
-        {
-            @Override
-            public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
-            {
-                applyNewData(fullPath, event.getResultCode(), event.getStat(), null);
-            }
-        };
+	 void getDataAndStat(final String fullPath) throws Exception
+	 {
+		 BackgroundCallback  existsCallback = new BackgroundCallback()
+		 {
+			 @Override
+			 public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
+			 {
+				 applyNewData(fullPath, event.getResultCode(), event.getStat(), null);
+			 }
+		 };
 
-        BackgroundCallback  getDataCallback = new BackgroundCallback()
-        {
-            @Override
-            public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
-            {
-                applyNewData(fullPath, event.getResultCode(), event.getStat(), event.getData());
-            }
-        };
+		 BackgroundCallback  getDataCallback = new BackgroundCallback()
+		 {
+			 @Override
+			 public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
+			 {
+				 applyNewData(fullPath, event.getResultCode(), event.getStat(), event.getData());
+			 }
+		 };
 
-        if ( cacheData )
-        {
-            if ( dataIsCompressed )
-            {
-                client.getData().decompressed().usingWatcher(dataWatcher).inBackground(getDataCallback).forPath(fullPath);
-            }
-            else
-            {
-                client.getData().usingWatcher(dataWatcher).inBackground(getDataCallback).forPath(fullPath);
-            }
-        }
-        else
-        {
-            client.checkExists().usingWatcher(dataWatcher).inBackground(existsCallback).forPath(fullPath);
-        }
-    }
+		 if ( cacheData )
+		 {
+			 if ( dataIsCompressed )
+			 {
+				 client.getData().decompressed().usingWatcher(dataWatcher).inBackground(getDataCallback).forPath(fullPath);
+			 }
+			 else
+			 {
+				 client.getData().usingWatcher(dataWatcher).inBackground(getDataCallback).forPath(fullPath);
+			 }
+		 }
+		 else
+		 {
+			 client.checkExists().usingWatcher(dataWatcher).inBackground(existsCallback).forPath(fullPath);
+		 }
+	 }
 
-    /**
-     * Default behavior is just to log the exception
-     *
-     * @param e the exception
-     */
-    protected void      handleException(Throwable e)
-    {
-        log.error("", e);
-    }
+	 /**
+	  * Default behavior is just to log the exception
+	  *
+	  * @param e the exception
+	  */
+	  protected void      handleException(Throwable e)
+	 {
+		 log.error("", e);
+	 }
 
-    private void handleStateChange(ConnectionState newState)
-    {
-        switch ( newState )
-        {
-        case SUSPENDED:
-        {
-            offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CONNECTION_SUSPENDED, null)));
-            break;
-        }
+	 private void handleStateChange(ConnectionState newState)
+	 {
+		 switch ( newState )
+		 {
+		 case SUSPENDED:
+		 {
+			 offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CONNECTION_SUSPENDED, null)));
+			 break;
+		 }
 
-        case LOST:
-        {
-            offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CONNECTION_LOST, null)));
-            break;
-        }
+		 case LOST:
+		 {
+			 offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CONNECTION_LOST, null)));
+			 break;
+		 }
 
-        case RECONNECTED:
-        {
-            try
-            {
-                offerOperation(new ForceRefreshOperation(this));
-                offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CONNECTION_RECONNECTED, null)));
-            }
-            catch ( Exception e )
-            {
-                handleException(e);
-            }
-            break;
-        }
-        }
-    }
+		 case RECONNECTED:
+		 {
+			 try
+			 {
+				 offerOperation(new ForceRefreshOperation(this));
+				 offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CONNECTION_RECONNECTED, null)));
+			 }
+			 catch ( Exception e )
+			 {
+				 handleException(e);
+			 }
+			 break;
+		 }
+		default:
+			break;
+		 }
+	 }
 
-    private void processChildren(List<String> children, boolean forceGetDataAndStat) throws Exception
-    {
-        List<String>    fullPaths = Lists.transform
-            (
-                children,
-                new Function<String, String>()
-                {
-                    @Override
-                    public String apply(String child)
-                    {
-                        return ZKPaths.makePath(path, child);
-                    }
-                }
-            );
-        Set<String>     removedNodes = Sets.newHashSet(currentData.keySet());
-        removedNodes.removeAll(fullPaths);
+	 private void processChildren(List<String> children, boolean forceGetDataAndStat) throws Exception
+	 {
+		 List<String>    fullPaths = Lists.transform
+				 (
+						 children,
+						 new Function<String, String>()
+						 {
+							 @Override
+							 public String apply(String child)
+							 {
+								 return ZKPaths.makePath(path, child);
+							 }
+						 }
+						 );
+		 Set<String>     removedNodes = Sets.newHashSet(currentData.keySet());
+		 removedNodes.removeAll(fullPaths);
 
-        for ( String fullPath : removedNodes )
-        {
-            remove(fullPath);
-        }
+		 for ( String fullPath : removedNodes )
+		 {
+			 remove(fullPath);
+		 }
 
-        for ( String name : children )
-        {
-            String      fullPath = ZKPaths.makePath(path, name);
-            if ( forceGetDataAndStat || !currentData.containsKey(fullPath) )
-            {
-                getDataAndStat(fullPath);
-            }
-        }
-    }
+		 for ( String name : children )
+		 {
+			 String      fullPath = ZKPaths.makePath(path, name);
+			 if ( forceGetDataAndStat || !currentData.containsKey(fullPath) )
+			 {
+				 getDataAndStat(fullPath);
+			 }
+		 }
+	 }
 
-    private void remove(String fullPath)
-    {
-        ChildData data = currentData.remove(fullPath);
-        if ( data != null )
-        {
-            offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CHILD_REMOVED, data)));
-        }
-    }
+	 private void remove(String fullPath)
+	 {
+		 ChildData data = currentData.remove(fullPath);
+		 if ( data != null )
+		 {
+			 offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CHILD_REMOVED, data)));
+		 }
+	 }
 
-    private void applyNewData(String fullPath, int resultCode, Stat stat, byte[] bytes)
-    {
-        if ( resultCode == KeeperException.Code.OK.intValue() ) // otherwise - node must have dropped or something - we should be getting another event
-        {
-            ChildData       data = new ChildData(fullPath, stat, bytes);
-            ChildData       previousData = currentData.put(fullPath, data);
-            if ( previousData == null ) // i.e. new
-            {
-                offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CHILD_ADDED, data)));
-            }
-            else if ( previousData.getStat().getVersion() != stat.getVersion() )
-            {
-                offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CHILD_UPDATED, data)));
-            }
-        }
-    }
+	 private void applyNewData(String fullPath, int resultCode, Stat stat, byte[] bytes)
+	 {
+		 if ( resultCode == KeeperException.Code.OK.intValue() ) // otherwise - node must have dropped or something - we should be getting another event
+		 {
+			 ChildData       data = new ChildData(fullPath, stat, bytes);
+			 ChildData       previousData = currentData.put(fullPath, data);
+			 if ( previousData == null ) // i.e. new
+			 {
+				 offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CHILD_ADDED, data)));
+			 }
+			 else if ( previousData.getStat().getVersion() != stat.getVersion() )
+			 {
+				 offerOperation(new EventOperation(this, new PathChildrenCacheEvent(PathChildrenCacheEvent.Type.CHILD_UPDATED, data)));
+			 }
+		 }
+	 }
 
-    private void mainLoop()
-    {
-        while ( !Thread.currentThread().isInterrupted() )
-        {
-            try
-            {
-                operations.take().invoke();
-            }
-            catch ( InterruptedException e )
-            {
-                Thread.currentThread().interrupt();
-                break;
-            }
-            catch ( Exception e )
-            {
-                handleException(e);
-            }
-        }
-    }
+	 private void mainLoop()
+	 {
+		 while ( !Thread.currentThread().isInterrupted() )
+		 {
+			 try
+			 {
+				 operations.take().invoke();
+			 }
+			 catch ( InterruptedException e )
+			 {
+				 Thread.currentThread().interrupt();
+				 break;
+			 }
+			 catch ( Exception e )
+			 {
+				 handleException(e);
+			 }
+		 }
+	 }
 
-    private void offerOperation(Operation operation)
-    {
-        operations.remove(operation);   // avoids herding for refresh operations
-        operations.offer(operation);
-    }
+	 private void offerOperation(Operation operation)
+	 {
+		 operations.remove(operation);   // avoids herding for refresh operations
+		 operations.offer(operation);
+	 }
 }

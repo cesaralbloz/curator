@@ -49,285 +49,285 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestFrameworkEdges extends BaseClassForTests
 {
-    @Test
-    public void     testMissedResponseOnBackgroundESCreate() throws Exception
-    {
-        CuratorFramework                client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            CreateBuilderImpl               createBuilder = (CreateBuilderImpl)client.create();
-            createBuilder.failNextCreateForTesting = true;
+	@Test
+	public void     testMissedResponseOnBackgroundESCreate() throws Exception
+	{
+		CuratorFramework                client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			CreateBuilderImpl               createBuilder = (CreateBuilderImpl)client.create();
+			createBuilder.failNextCreateForTesting = true;
 
-            final BlockingQueue<String>     queue = Queues.newArrayBlockingQueue(1);
-            BackgroundCallback              callback = new BackgroundCallback()
-            {
-                @Override
-                public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
-                {
-                    queue.put(event.getPath());
-                }
-            };
-            createBuilder.withProtection().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).inBackground(callback).forPath("/");
-            String          ourPath = queue.poll(10, TimeUnit.SECONDS);
-            Assert.assertTrue(ourPath.startsWith(ZKPaths.makePath("/", CreateBuilderImpl.PROTECTED_PREFIX)));
-            Assert.assertFalse(createBuilder.failNextCreateForTesting);
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			final BlockingQueue<String>     queue = Queues.newArrayBlockingQueue(1);
+			BackgroundCallback              callback = new BackgroundCallback()
+			{
+				@Override
+				public void processResult(CuratorFramework client, CuratorEvent event) throws Exception
+				{
+					queue.put(event.getPath());
+				}
+			};
+			createBuilder.withProtection().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).inBackground(callback).forPath("/");
+			String          ourPath = queue.poll(10, TimeUnit.SECONDS);
+			Assert.assertTrue(ourPath.startsWith(ZKPaths.makePath("/", CreateBuilderImpl.PROTECTED_PREFIX)));
+			Assert.assertFalse(createBuilder.failNextCreateForTesting);
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void     testMissedResponseOnESCreate() throws Exception
-    {
-        CuratorFramework                client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            CreateBuilderImpl               createBuilder = (CreateBuilderImpl)client.create();
-            createBuilder.failNextCreateForTesting = true;
-            String                          ourPath = createBuilder.withProtection().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath("/");
-            Assert.assertTrue(ourPath.startsWith(ZKPaths.makePath("/", CreateBuilderImpl.PROTECTED_PREFIX)));
-            Assert.assertFalse(createBuilder.failNextCreateForTesting);
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+	@Test
+	public void     testMissedResponseOnESCreate() throws Exception
+	{
+		CuratorFramework                client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			CreateBuilderImpl               createBuilder = (CreateBuilderImpl)client.create();
+			createBuilder.failNextCreateForTesting = true;
+			String                          ourPath = createBuilder.withProtection().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath("/");
+			Assert.assertTrue(ourPath.startsWith(ZKPaths.makePath("/", CreateBuilderImpl.PROTECTED_PREFIX)));
+			Assert.assertFalse(createBuilder.failNextCreateForTesting);
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void     testSessionKilled() throws Exception
-    {
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            client.create().forPath("/sessionTest");
+	@Test
+	public void     testSessionKilled() throws Exception
+	{
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			client.create().forPath("/sessionTest");
 
-            final AtomicBoolean     sessionDied = new AtomicBoolean(false);
-            Watcher         watcher = new Watcher()
-            {
-                @Override
-                public void process(WatchedEvent event)
-                {
-                    if ( event.getState() == Event.KeeperState.Expired )
-                    {
-                        sessionDied.set(true);
-                    }
-                }
-            };
-            client.checkExists().usingWatcher(watcher).forPath("/sessionTest");
-            KillSession.kill(client.getZookeeperClient().getZooKeeper(), server.getConnectString());
-            Assert.assertNotNull(client.checkExists().forPath("/sessionTest"));
-            Assert.assertTrue(sessionDied.get());
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			final AtomicBoolean     sessionDied = new AtomicBoolean(false);
+			Watcher         watcher = new Watcher()
+			{
+				@Override
+				public void process(WatchedEvent event)
+				{
+					if ( event.getState() == Event.KeeperState.Expired )
+					{
+						sessionDied.set(true);
+					}
+				}
+			};
+			client.checkExists().usingWatcher(watcher).forPath("/sessionTest");
+			KillSession.kill(client.getZookeeperClient().getZooKeeper(), server.getConnectString());
+			Assert.assertNotNull(client.checkExists().forPath("/sessionTest"));
+			Assert.assertTrue(sessionDied.get());
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void         testNestedCalls() throws Exception
-    {
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            client.getCuratorListenable().addListener
-            (
-                new CuratorListener()
-                {
-                    @Override
-                    public void eventReceived(CuratorFramework client, CuratorEvent event) throws Exception
-                    {
-                        if ( event.getType() == CuratorEventType.EXISTS )
-                        {
-                            Stat    stat = client.checkExists().forPath("/yo/yo/yo");
-                            Assert.assertNull(stat);
+	@Test
+	public void         testNestedCalls() throws Exception
+	{
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			client.getCuratorListenable().addListener
+			(
+					new CuratorListener()
+					{
+						@Override
+						public void eventReceived(CuratorFramework client, CuratorEvent event) throws Exception
+						{
+							if ( event.getType() == CuratorEventType.EXISTS )
+							{
+								Stat    stat = client.checkExists().forPath("/yo/yo/yo");
+								Assert.assertNull(stat);
 
-                            client.create().inBackground(event.getContext()).forPath("/what");
-                        }
-                        else if ( event.getType() == CuratorEventType.CREATE )
-                        {
-                            ((CountDownLatch)event.getContext()).countDown();
-                        }
-                    }
-                }
-            );
+								client.create().inBackground(event.getContext()).forPath("/what");
+							}
+							else if ( event.getType() == CuratorEventType.CREATE )
+							{
+								((CountDownLatch)event.getContext()).countDown();
+							}
+						}
+					}
+					);
 
-            CountDownLatch        latch = new CountDownLatch(1);
-            client.checkExists().inBackground(latch).forPath("/hey");
-            Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			CountDownLatch        latch = new CountDownLatch(1);
+			client.checkExists().inBackground(latch).forPath("/hey");
+			Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void         testBackgroundFailure() throws Exception
-    {
-        Timing              timing = new Timing();
-        CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            final CountDownLatch        latch = new CountDownLatch(1);
-            client.getConnectionStateListenable().addListener
-            (
-                new ConnectionStateListener()
-                {
-                    @Override
-                    public void stateChanged(CuratorFramework client, ConnectionState newState)
-                    {
-                        if ( newState == ConnectionState.LOST )
-                        {
-                            latch.countDown();
-                        }
-                    }
-                }
-            );
+	@Test
+	public void         testBackgroundFailure() throws Exception
+	{
+		Timing              timing = new Timing();
+		CuratorFramework    client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			final CountDownLatch        latch = new CountDownLatch(1);
+			client.getConnectionStateListenable().addListener
+			(
+					new ConnectionStateListener()
+					{
+						@Override
+						public void stateChanged(CuratorFramework client, ConnectionState newState)
+						{
+							if ( newState == ConnectionState.LOST )
+							{
+								latch.countDown();
+							}
+						}
+					}
+					);
 
-            client.checkExists().forPath("/hey");
-            client.checkExists().inBackground().forPath("/hey");
+			client.checkExists().forPath("/hey");
+			client.checkExists().inBackground().forPath("/hey");
 
-            server.stop();
+			server.stop();
 
-            client.checkExists().inBackground().forPath("/hey");
-            Assert.assertTrue(timing.awaitLatch(latch));
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			client.checkExists().inBackground().forPath("/hey");
+			Assert.assertTrue(timing.awaitLatch(latch));
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void         testFailure() throws Exception
-    {
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), 100, 100, new RetryOneTime(1));
-        client.start();
-        try
-        {
-            client.checkExists().forPath("/hey");
-            client.checkExists().inBackground().forPath("/hey");
+	@Test
+	public void         testFailure() throws Exception
+	{
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), 100, 100, new RetryOneTime(1));
+		client.start();
+		try
+		{
+			client.checkExists().forPath("/hey");
+			client.checkExists().inBackground().forPath("/hey");
 
-            server.stop();
+			server.stop();
 
-            client.checkExists().forPath("/hey");
-            Assert.fail();
-        }
-        catch ( KeeperException.ConnectionLossException e )
-        {
-            // correct
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			client.checkExists().forPath("/hey");
+			Assert.fail();
+		}
+		catch ( KeeperException.ConnectionLossException e )
+		{
+			// correct
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void         testRetry() throws Exception
-    {
-        final int       MAX_RETRIES = 3;
-        final int       serverPort = server.getPort();
+	@Test
+	public void         testRetry() throws Exception
+	{
+		final int       MAX_RETRIES = 3;
+		final int       serverPort = server.getPort();
 
-        final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), 1000, 1000, new RetryOneTime(10));
-        client.start();
-        try
-        {
-            final AtomicInteger     retries = new AtomicInteger(0);
-            final Semaphore         semaphore = new Semaphore(0);
-            client.getZookeeperClient().setRetryPolicy
-            (
-                new RetryPolicy()
-                {
-                    @Override
-                    public boolean allowRetry(int retryCount, long elapsedTimeMs, RetrySleeper sleeper)
-                    {
-                        semaphore.release();
-                        if ( retries.incrementAndGet() == MAX_RETRIES )
-                        {
-                            try
-                            {
-                                server = new TestingServer(serverPort);
-                            }
-                            catch ( Exception e )
-                            {
-                                throw new Error(e);
-                            }
-                        }
-                        return true;
-                    }
-                }
-            );
+		final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), 1000, 1000, new RetryOneTime(10));
+		client.start();
+		try
+		{
+			final AtomicInteger     retries = new AtomicInteger(0);
+			final Semaphore         semaphore = new Semaphore(0);
+			client.getZookeeperClient().setRetryPolicy
+			(
+					new RetryPolicy()
+					{
+						@Override
+						public boolean allowRetry(int retryCount, long elapsedTimeMs, RetrySleeper sleeper)
+						{
+							semaphore.release();
+							if ( retries.incrementAndGet() == MAX_RETRIES )
+							{
+								try
+								{
+									server = new TestingServer(serverPort);
+								}
+								catch ( Exception e )
+								{
+									throw new Error(e);
+								}
+							}
+							return true;
+						}
+					}
+					);
 
-            server.stop();
+			server.stop();
 
-            // test foreground retry
-            client.checkExists().forPath("/hey");
-            Assert.assertTrue(semaphore.tryAcquire(MAX_RETRIES, 10, TimeUnit.SECONDS));
+			// test foreground retry
+			client.checkExists().forPath("/hey");
+			Assert.assertTrue(semaphore.tryAcquire(MAX_RETRIES, 10, TimeUnit.SECONDS));
 
-            semaphore.drainPermits();
-            retries.set(0);
+			semaphore.drainPermits();
+			retries.set(0);
 
-            server.stop();
+			server.stop();
 
-            // test background retry
-            client.checkExists().inBackground().forPath("/hey");
-            Assert.assertTrue(semaphore.tryAcquire(MAX_RETRIES, 10, TimeUnit.SECONDS));
-        }
-        catch ( Throwable e )
-        {
-            Assert.fail("Error", e);
-        }
-        finally
-        {
-            client.close();
-        }
-    }
+			// test background retry
+			client.checkExists().inBackground().forPath("/hey");
+			Assert.assertTrue(semaphore.tryAcquire(MAX_RETRIES, 10, TimeUnit.SECONDS));
+		}
+		catch ( Throwable e )
+		{
+			Assert.fail("Error", e);
+		}
+		finally
+		{
+			client.close();
+		}
+	}
 
-    @Test
-    public void         testNotStarted() throws Exception
-    {
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        try
-        {
-            client.getData();
-            Assert.fail();
-        }
-        catch ( Exception e )
-        {
-            // correct
-        }
-        catch ( Throwable e )
-        {
-            Assert.fail("", e);
-        }
-    }
+	@Test
+	public void         testNotStarted() throws Exception
+	{
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		try
+		{
+			client.getData();
+			Assert.fail();
+		}
+		catch ( Exception e )
+		{
+			// correct
+		}
+		catch ( Throwable e )
+		{
+			Assert.fail("", e);
+		}
+	}
 
-    @Test
-    public void         testStopped() throws Exception
-    {
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        client.getData();
-        client.close();
+	@Test
+	public void         testStopped() throws Exception
+	{
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		client.getData();
+		client.close();
 
-        try
-        {
-            client.getData();
-            Assert.fail();
-        }
-        catch ( Exception e )
-        {
-            // correct
-        }
-    }
+		try
+		{
+			client.getData();
+			Assert.fail();
+		}
+		catch ( Exception e )
+		{
+			// correct
+		}
+	}
 }

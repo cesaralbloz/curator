@@ -39,275 +39,275 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestLeaderLatch extends BaseClassForTests
 {
-    private static final String PATH_NAME = "/one/two/me";
-    private static final int MAX_LOOPS = 5;
+	private static final String PATH_NAME = "/one/two/me";
+	private static final int MAX_LOOPS = 5;
 
-    @Test
-    public void testLostConnection() throws Exception
-    {
-        final int PARTICIPANT_QTY = 10;
+	@Test
+	public void testLostConnection() throws Exception
+	{
+		final int PARTICIPANT_QTY = 10;
 
-        List<LeaderLatch> latches = Lists.newArrayList();
+		List<LeaderLatch> latches = Lists.newArrayList();
 
-        final Timing timing = new Timing();
-        final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        try
-        {
-            client.start();
+		final Timing timing = new Timing();
+		final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		try
+		{
+			client.start();
 
-            final CountDownLatch        countDownLatch = new CountDownLatch(1);
-            client.getConnectionStateListenable().addListener
-            (
-                new ConnectionStateListener()
-                {
-                    @Override
-                    public void stateChanged(CuratorFramework client, ConnectionState newState)
-                    {
-                        if ( newState == ConnectionState.LOST )
-                        {
-                            countDownLatch.countDown();
-                        }
-                    }
-                }
-            );
+			final CountDownLatch        countDownLatch = new CountDownLatch(1);
+			client.getConnectionStateListenable().addListener
+			(
+					new ConnectionStateListener()
+					{
+						@Override
+						public void stateChanged(CuratorFramework client, ConnectionState newState)
+						{
+							if ( newState == ConnectionState.LOST )
+							{
+								countDownLatch.countDown();
+							}
+						}
+					}
+					);
 
-            for ( int i = 0; i < PARTICIPANT_QTY; ++i )
-            {
-                LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
-                latch.start();
-                latches.add(latch);
-            }
+			for ( int i = 0; i < PARTICIPANT_QTY; ++i )
+			{
+				LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
+				latch.start();
+				latches.add(latch);
+			}
 
-            waitForALeader(latches, timing);
+			waitForALeader(latches, timing);
 
-            server.stop();
-            Assert.assertTrue(timing.awaitLatch(countDownLatch));
+			server.stop();
+			Assert.assertTrue(timing.awaitLatch(countDownLatch));
 
-            timing.forWaiting().sleepABit();
+			timing.forWaiting().sleepABit();
 
-            Assert.assertEquals(getLeaders(latches).size(), 0);
+			Assert.assertEquals(getLeaders(latches).size(), 0);
 
-            server = new TestingServer(server.getPort(), server.getTempDirectory());
-            waitForALeader(latches, timing);    // should reconnect
-            Assert.assertEquals(getLeaders(latches).size(), 1);
-        }
-        finally
-        {
-            for ( LeaderLatch latch : latches )
-            {
-                Closeables.closeQuietly(latch);
-            }
-            Closeables.closeQuietly(client);
-        }
-    }
+			server = new TestingServer(server.getPort(), server.getTempDirectory());
+			waitForALeader(latches, timing);    // should reconnect
+			Assert.assertEquals(getLeaders(latches).size(), 1);
+		}
+		finally
+		{
+			for ( LeaderLatch latch : latches )
+			{
+				Closeables.closeQuietly(latch);
+			}
+			Closeables.closeQuietly(client);
+		}
+	}
 
-    @Test
-    public void testCorrectWatching() throws Exception
-    {
-    	final int PARTICIPANT_QTY = 10;
-    	final int PARTICIPANT_ID = 2;
-    	
-    	List<LeaderLatch> latches = Lists.newArrayList();
+	@Test
+	public void testCorrectWatching() throws Exception
+	{
+		final int PARTICIPANT_QTY = 10;
+		final int PARTICIPANT_ID = 2;
 
-        final Timing timing = new Timing();
-        final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        try
-        {
-             client.start();
+		List<LeaderLatch> latches = Lists.newArrayList();
 
-             for ( int i = 0; i < PARTICIPANT_QTY; ++i )
-             {
-                 LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
-                 latch.start();
-                 latches.add(latch);
-             }
+		final Timing timing = new Timing();
+		final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		try
+		{
+			client.start();
 
-             waitForALeader(latches, timing);
-             
-             //we need to close a Participant that doesn't be actual leader (first Participant) nor the last
-             latches.get(PARTICIPANT_ID).close();
-             
-             //As the previous algorithm assumed that if the watched node is deleted gets the leadership
-             //we need to ensure that the PARTICIPANT_ID-1 is not getting (wrongly) elected as leader.
-             Assert.assertTrue(!latches.get(PARTICIPANT_ID-1).hasLeadership());
-	     }
-	     finally
-	     {
-	    	 //removes the already closed participant
-	    	 latches.remove(PARTICIPANT_ID);
-	    	 
-	         for ( LeaderLatch latch : latches )
-	         {
-	             Closeables.closeQuietly(latch);
-	         }
-	         Closeables.closeQuietly(client);
-	     }
+			for ( int i = 0; i < PARTICIPANT_QTY; ++i )
+			{
+				LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
+				latch.start();
+				latches.add(latch);
+			}
 
-    }
-    
-    @Test
-    public void testWaiting() throws Exception
-    {
-        final int PARTICIPANT_QTY = 10;
+			waitForALeader(latches, timing);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(PARTICIPANT_QTY);
-        ExecutorCompletionService<Void> service = new ExecutorCompletionService<Void>(executorService);
+			//we need to close a Participant that doesn't be actual leader (first Participant) nor the last
+			latches.get(PARTICIPANT_ID).close();
 
-        final Timing timing = new Timing();
-        final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        try
-        {
-            client.start();
+			//As the previous algorithm assumed that if the watched node is deleted gets the leadership
+			//we need to ensure that the PARTICIPANT_ID-1 is not getting (wrongly) elected as leader.
+			Assert.assertTrue(!latches.get(PARTICIPANT_ID-1).hasLeadership());
+		}
+		finally
+		{
+			//removes the already closed participant
+			latches.remove(PARTICIPANT_ID);
 
-            final AtomicBoolean thereIsALeader = new AtomicBoolean(false);
-            for ( int i = 0; i < PARTICIPANT_QTY; ++i )
-            {
-                service.submit
-                    (
-                        new Callable<Void>()
-                        {
-                            @Override
-                            public Void call() throws Exception
-                            {
-                                LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
-                                try
-                                {
-                                    latch.start();
-                                    Assert.assertTrue(latch.await(timing.forWaiting().seconds(), TimeUnit.SECONDS));
-                                    Assert.assertTrue(thereIsALeader.compareAndSet(false, true));
-                                    Thread.sleep((int)(10 * Math.random()));
-                                }
-                                finally
-                                {
-                                    thereIsALeader.set(false);
-                                    latch.close();
-                                }
-                                return null;
-                            }
-                        }
-                    );
-            }
+			for ( LeaderLatch latch : latches )
+			{
+				Closeables.closeQuietly(latch);
+			}
+			Closeables.closeQuietly(client);
+		}
 
-            for ( int i = 0; i < PARTICIPANT_QTY; ++i )
-            {
-                service.take().get();
-            }
-        }
-        finally
-        {
-            executorService.shutdown();
-            Closeables.closeQuietly(client);
-        }
-    }
+	}
 
-    @Test
-    public void testBasic() throws Exception
-    {
-        basic(Mode.START_IMMEDIATELY);
-    }
+	@Test
+	public void testWaiting() throws Exception
+	{
+		final int PARTICIPANT_QTY = 10;
 
-    @Test
-    public void testBasicAlt() throws Exception
-    {
-        basic(Mode.START_IN_THREADS);
-    }
+		ExecutorService executorService = Executors.newFixedThreadPool(PARTICIPANT_QTY);
+		ExecutorCompletionService<Void> service = new ExecutorCompletionService<Void>(executorService);
 
-    private enum Mode
-    {
-        START_IMMEDIATELY,
-        START_IN_THREADS
-    }
+		final Timing timing = new Timing();
+		final CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		try
+		{
+			client.start();
 
-    private void basic(Mode mode) throws Exception
-    {
-        final int PARTICIPANT_QTY = 10;
+			final AtomicBoolean thereIsALeader = new AtomicBoolean(false);
+			for ( int i = 0; i < PARTICIPANT_QTY; ++i )
+			{
+				service.submit
+				(
+						new Callable<Void>()
+						{
+							@Override
+							public Void call() throws Exception
+							{
+								LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
+								try
+								{
+									latch.start();
+									Assert.assertTrue(latch.await(timing.forWaiting().seconds(), TimeUnit.SECONDS));
+									Assert.assertTrue(thereIsALeader.compareAndSet(false, true));
+									Thread.sleep((int)(10 * Math.random()));
+								}
+								finally
+								{
+									thereIsALeader.set(false);
+									latch.close();
+								}
+								return null;
+							}
+						}
+						);
+			}
 
-        List<LeaderLatch> latches = Lists.newArrayList();
+			for ( int i = 0; i < PARTICIPANT_QTY; ++i )
+			{
+				service.take().get();
+			}
+		}
+		finally
+		{
+			executorService.shutdown();
+			Closeables.closeQuietly(client);
+		}
+	}
 
-        Timing timing = new Timing();
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
-        try
-        {
-            client.start();
+	@Test
+	public void testBasic() throws Exception
+	{
+		basic(Mode.START_IMMEDIATELY);
+	}
 
-            for ( int i = 0; i < PARTICIPANT_QTY; ++i )
-            {
-                LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
-                if ( mode == Mode.START_IMMEDIATELY )
-                {
-                    latch.start();
-                }
-                latches.add(latch);
-            }
-            if ( mode == Mode.START_IN_THREADS )
-            {
-                ExecutorService service = Executors.newFixedThreadPool(latches.size());
-                for ( final LeaderLatch latch : latches )
-                {
-                    service.submit
-                    (
-                        new Callable<Object>()
-                        {
-                            @Override
-                            public Object call() throws Exception
-                            {
-                                Thread.sleep((int)(100 * Math.random()));
-                                latch.start();
-                                return null;
-                            }
-                        }
-                    );
-                }
-                service.shutdown();
-            }
+	@Test
+	public void testBasicAlt() throws Exception
+	{
+		basic(Mode.START_IN_THREADS);
+	}
 
-            while ( latches.size() > 0 )
-            {
-                waitForALeader(latches, timing);
+	private enum Mode
+	{
+		START_IMMEDIATELY,
+		START_IN_THREADS
+	}
 
-                List<LeaderLatch> leaders = getLeaders(latches);
-                Assert.assertEquals(leaders.size(), 1); // there can only be one leader
-                LeaderLatch theLeader = leaders.get(0);
-                if ( mode == Mode.START_IMMEDIATELY )
-                {
-                    Assert.assertEquals(latches.indexOf(theLeader), 0); // assert ordering - leadership should advance in start order
-                }
-                theLeader.close();
-                latches.remove(theLeader);
-            }
-        }
-        finally
-        {
-            for ( LeaderLatch latch : latches )
-            {
-                Closeables.closeQuietly(latch);
-            }
-            Closeables.closeQuietly(client);
-        }
-    }
+	private void basic(Mode mode) throws Exception
+	{
+		final int PARTICIPANT_QTY = 10;
 
-    private void waitForALeader(List<LeaderLatch> latches, Timing timing) throws InterruptedException
-    {
-        for ( int i = 0; i < MAX_LOOPS; ++i )
-        {
-            if ( getLeaders(latches).size() != 0 )
-            {
-                break;
-            }
-            timing.sleepABit();
-        }
-    }
+		List<LeaderLatch> latches = Lists.newArrayList();
 
-    private List<LeaderLatch> getLeaders(Collection<LeaderLatch> latches)
-    {
-        List<LeaderLatch> leaders = Lists.newArrayList();
-        for ( LeaderLatch latch : latches )
-        {
-            if ( latch.hasLeadership() )
-            {
-                leaders.add(latch);
-            }
-        }
-        return leaders;
-    }
+		Timing timing = new Timing();
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), timing.session(), timing.connection(), new RetryOneTime(1));
+		try
+		{
+			client.start();
+
+			for ( int i = 0; i < PARTICIPANT_QTY; ++i )
+			{
+				LeaderLatch latch = new LeaderLatch(client, PATH_NAME);
+				if ( mode == Mode.START_IMMEDIATELY )
+				{
+					latch.start();
+				}
+				latches.add(latch);
+			}
+			if ( mode == Mode.START_IN_THREADS )
+			{
+				ExecutorService service = Executors.newFixedThreadPool(latches.size());
+				for ( final LeaderLatch latch : latches )
+				{
+					service.submit
+					(
+							new Callable<Object>()
+							{
+								@Override
+								public Object call() throws Exception
+								{
+									Thread.sleep((int)(100 * Math.random()));
+									latch.start();
+									return null;
+								}
+							}
+							);
+				}
+				service.shutdown();
+			}
+
+			while ( latches.size() > 0 )
+			{
+				waitForALeader(latches, timing);
+
+				List<LeaderLatch> leaders = getLeaders(latches);
+				Assert.assertEquals(leaders.size(), 1); // there can only be one leader
+				LeaderLatch theLeader = leaders.get(0);
+				if ( mode == Mode.START_IMMEDIATELY )
+				{
+					Assert.assertEquals(latches.indexOf(theLeader), 0); // assert ordering - leadership should advance in start order
+				}
+				theLeader.close();
+				latches.remove(theLeader);
+			}
+		}
+		finally
+		{
+			for ( LeaderLatch latch : latches )
+			{
+				Closeables.closeQuietly(latch);
+			}
+			Closeables.closeQuietly(client);
+		}
+	}
+
+	private void waitForALeader(List<LeaderLatch> latches, Timing timing) throws InterruptedException
+	{
+		for ( int i = 0; i < MAX_LOOPS; ++i )
+		{
+			if ( getLeaders(latches).size() != 0 )
+			{
+				break;
+			}
+			timing.sleepABit();
+		}
+	}
+
+	private List<LeaderLatch> getLeaders(Collection<LeaderLatch> latches)
+	{
+		List<LeaderLatch> leaders = Lists.newArrayList();
+		for ( LeaderLatch latch : latches )
+		{
+			if ( latch.hasLeadership() )
+			{
+				leaders.add(latch);
+			}
+		}
+		return leaders;
+	}
 }

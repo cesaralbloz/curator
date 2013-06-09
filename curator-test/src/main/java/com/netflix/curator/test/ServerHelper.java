@@ -82,16 +82,16 @@ class ServerHelper {
 						serverCnxnFactoryClass.getConstructor(),
 						serverCnxnFactoryClass.getDeclaredMethod("configure",
 								InetSocketAddress.class, Integer.TYPE),
-						serverCnxnFactoryClass.getDeclaredMethod("startup",
-								ZooKeeperServer.class),
-						serverCnxnFactoryClass.getDeclaredMethod("shutdown"));
+								serverCnxnFactoryClass.getDeclaredMethod("startup",
+										ZooKeeperServer.class),
+										serverCnxnFactoryClass.getDeclaredMethod("shutdown"));
 			} else if (nioServerCnxnFactoryClass != null) {
 				localNioServerCnxn = new NioServerCnxnMethods(
 						nioServerCnxnFactoryClass
-								.getConstructor(InetSocketAddress.class),
+						.getConstructor(InetSocketAddress.class),
 						nioServerCnxnFactoryClass.getDeclaredMethod("startup",
 								ZooKeeperServer.class),
-						nioServerCnxnFactoryClass.getDeclaredMethod("shutdown"));
+								nioServerCnxnFactoryClass.getDeclaredMethod("shutdown"));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

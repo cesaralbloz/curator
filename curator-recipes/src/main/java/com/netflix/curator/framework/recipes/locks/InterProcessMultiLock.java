@@ -31,158 +31,158 @@ import static com.google.common.collect.Lists.reverse;
  */
 public class InterProcessMultiLock implements InterProcessLock
 {
-    private final List<InterProcessLock> locks;
+	private final List<InterProcessLock> locks;
 
-    /**
-     * Creates a multi lock of {@link InterProcessMutex}s
-     *
-     * @param client the client
-     * @param paths list of paths to manage in the order that they are to be locked
-     */
-    public InterProcessMultiLock(CuratorFramework client, List<String> paths)
-    {
-        this(makeLocks(client, paths));
-    }
+	/**
+	 * Creates a multi lock of {@link InterProcessMutex}s
+	 *
+	 * @param client the client
+	 * @param paths list of paths to manage in the order that they are to be locked
+	 */
+	public InterProcessMultiLock(CuratorFramework client, List<String> paths)
+	{
+		this(makeLocks(client, paths));
+	}
 
-    /**
-     * Creates a multi lock of any type of inter process lock
-     *
-     * @param locks the locks
-     */
-    public InterProcessMultiLock(List<InterProcessLock> locks)
-    {
-        this.locks = ImmutableList.copyOf(locks);
-    }
+	/**
+	 * Creates a multi lock of any type of inter process lock
+	 *
+	 * @param locks the locks
+	 */
+	public InterProcessMultiLock(List<InterProcessLock> locks)
+	{
+		this.locks = ImmutableList.copyOf(locks);
+	}
 
-    private static List<InterProcessLock> makeLocks(CuratorFramework client, List<String> paths)
-    {
-        ImmutableList.Builder<InterProcessLock> builder = ImmutableList.builder();
-        for ( String path : paths )
-        {
-            InterProcessLock        lock = new InterProcessMutex(client, path);
-            builder.add(lock);
-        }
-        return builder.build();
-    }
+	private static List<InterProcessLock> makeLocks(CuratorFramework client, List<String> paths)
+	{
+		ImmutableList.Builder<InterProcessLock> builder = ImmutableList.builder();
+		for ( String path : paths )
+		{
+			InterProcessLock        lock = new InterProcessMutex(client, path);
+			builder.add(lock);
+		}
+		return builder.build();
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void acquire() throws Exception
-    {
-        acquire(-1, null);
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	 @Override
+	 public void acquire() throws Exception
+	 {
+		 acquire(-1, null);
+	 }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean acquire(long time, TimeUnit unit) throws Exception
-    {
-        Exception                   exception = null;
-        List<InterProcessLock>      acquired = Lists.newArrayList();
-        boolean                     success = true;
-        for ( InterProcessLock lock : locks )
-        {
-            try
-            {
-                if ( unit == null )
-                {
-                    lock.acquire();
-                    acquired.add(lock);
-                }
-                else
-                {
-                    if ( lock.acquire(time, unit) )
-                    {
-                        acquired.add(lock);
-                    }
-                    else
-                    {
-                        success = false;
-                        break;
-                    }
-                }
-            }
-            catch ( Exception e )
-            {
-                success = false;
-                exception = e;
-            }
-        }
+	 /**
+	  * {@inheritDoc}
+	  */
+	 @Override
+	 public boolean acquire(long time, TimeUnit unit) throws Exception
+	 {
+		 Exception                   exception = null;
+		 List<InterProcessLock>      acquired = Lists.newArrayList();
+		 boolean                     success = true;
+		 for ( InterProcessLock lock : locks )
+		 {
+			 try
+			 {
+				 if ( unit == null )
+				 {
+					 lock.acquire();
+					 acquired.add(lock);
+				 }
+				 else
+				 {
+					 if ( lock.acquire(time, unit) )
+					 {
+						 acquired.add(lock);
+					 }
+					 else
+					 {
+						 success = false;
+						 break;
+					 }
+				 }
+			 }
+			 catch ( Exception e )
+			 {
+				 success = false;
+				 exception = e;
+			 }
+		 }
 
-        if ( !success )
-        {
-            for ( InterProcessLock lock : reverse(acquired) )
-            {
-                try
-                {
-                    lock.release();
-                }
-                catch ( Exception e )
-                {
-                    // ignore
-                }
-            }
-        }
+		 if ( !success )
+		 {
+			 for ( InterProcessLock lock : reverse(acquired) )
+			 {
+				 try
+				 {
+					 lock.release();
+				 }
+				 catch ( Exception e )
+				 {
+					 // ignore
+				 }
+			 }
+		 }
 
-        if ( exception != null )
-        {
-            throw exception;
-        }
-        
-        return success;
-    }
+		 if ( exception != null )
+		 {
+			 throw exception;
+		 }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>NOTE: locks are released in the reverse order that they were acquired.</p>
-     */
-    @Override
-    public synchronized void release() throws Exception
-    {
-        Exception       baseException = null;
+		 return success;
+	 }
 
-        for ( InterProcessLock lock : reverse(locks) )
-        {
-            try
-            {
-                lock.release();
-            }
-            catch ( Exception e )
-            {
-                if ( baseException == null )
-                {
-                    baseException = e;
-                }
-                else
-                {
-                    baseException = new Exception(baseException);
-                }
-            }
-        }
+	 /**
+	  * {@inheritDoc}
+	  *
+	  * <p>NOTE: locks are released in the reverse order that they were acquired.</p>
+	  */
+	 @Override
+	 public synchronized void release() throws Exception
+	 {
+		 Exception       baseException = null;
 
-        if ( baseException != null )
-        {
-            throw baseException;
-        }
-    }
+		 for ( InterProcessLock lock : reverse(locks) )
+		 {
+			 try
+			 {
+				 lock.release();
+			 }
+			 catch ( Exception e )
+			 {
+				 if ( baseException == null )
+				 {
+					 baseException = e;
+				 }
+				 else
+				 {
+					 baseException = new Exception(baseException);
+				 }
+			 }
+		 }
 
-    @Override
-    public synchronized boolean isAcquiredInThisProcess()
-    {
-        // it's subjective what the correct meaning is here - I choose to return true
-        // only if all of the locks are acquired
+		 if ( baseException != null )
+		 {
+			 throw baseException;
+		 }
+	 }
 
-        for ( InterProcessLock lock : locks )
-        {
-            if ( !lock.isAcquiredInThisProcess() )
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+	 @Override
+	 public synchronized boolean isAcquiredInThisProcess()
+	 {
+		 // it's subjective what the correct meaning is here - I choose to return true
+		 // only if all of the locks are acquired
+
+		 for ( InterProcessLock lock : locks )
+		 {
+			 if ( !lock.isAcquiredInThisProcess() )
+			 {
+				 return false;
+			 }
+		 }
+		 return true;
+	 }
 }

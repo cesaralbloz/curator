@@ -18,7 +18,7 @@
 package com.netflix.curator.framework.api;
 
 public interface ACLBackgroundPathable<T> extends
-    ACLable<BackgroundPathable<T>>,
-    BackgroundPathable<T>
+ACLable<BackgroundPathable<T>>,
+BackgroundPathable<T>
 {
 }

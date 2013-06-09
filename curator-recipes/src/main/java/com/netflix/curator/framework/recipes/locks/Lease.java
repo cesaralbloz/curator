@@ -26,11 +26,11 @@ import java.io.IOException;
  */
 public interface Lease extends Closeable
 {
-    /**
-     * Releases the lease so that other clients/processes can acquire it
-     *
-     * @throws IOException
-     */
-    @Override
-    public void close() throws IOException;
+	/**
+	 * Releases the lease so that other clients/processes can acquire it
+	 *
+	 * @throws IOException
+	 */
+	@Override
+	public void close() throws IOException;
 }

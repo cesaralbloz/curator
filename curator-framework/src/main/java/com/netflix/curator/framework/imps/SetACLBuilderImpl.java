@@ -132,7 +132,6 @@ class SetACLBuilderImpl implements SetACLBuilder, BackgroundPathable<Stat>, Back
             version,
             new AsyncCallback.StatCallback()
             {
-                @SuppressWarnings({"unchecked"})
                 @Override
                 public void processResult(int rc, String path, Object ctx, Stat stat)
                 {

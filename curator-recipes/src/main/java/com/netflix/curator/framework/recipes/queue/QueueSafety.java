@@ -24,40 +24,40 @@ import java.util.concurrent.BlockingQueue;
  */
 public class QueueSafety<T>
 {
-    private final String lockPath;
-    private final QueueConsumer<T> consumer;
-    private final BlockingQueue<T> queue;
+	private final String lockPath;
+	private final QueueConsumer<T> consumer;
+	private final BlockingQueue<T> queue;
 
-    /**
-     * @param lockPath ZKPath to use for locking purposes
-     * @param consumer the message consumer
-     */
-    public QueueSafety(String lockPath, QueueConsumer<T> consumer)
-    {
-        this.lockPath = lockPath;
-        this.consumer = consumer;
-        this.queue = null;
-    }
+	/**
+	 * @param lockPath ZKPath to use for locking purposes
+	 * @param consumer the message consumer
+	 */
+	public QueueSafety(String lockPath, QueueConsumer<T> consumer)
+	{
+		this.lockPath = lockPath;
+		this.consumer = consumer;
+		this.queue = null;
+	}
 
-    QueueSafety(String lockPath, BlockingQueue<T> queue)
-    {
-        this.lockPath = lockPath;
-        this.consumer = null;
-        this.queue = queue;
-    }
+	QueueSafety(String lockPath, BlockingQueue<T> queue)
+	{
+		this.lockPath = lockPath;
+		this.consumer = null;
+		this.queue = queue;
+	}
 
-    String getLockPath()
-    {
-        return lockPath;
-    }
+	String getLockPath()
+	{
+		return lockPath;
+	}
 
-    QueueConsumer<T> getConsumer()
-    {
-        return consumer;
-    }
+	QueueConsumer<T> getConsumer()
+	{
+		return consumer;
+	}
 
-    BlockingQueue<T> getQueue()
-    {
-        return queue;
-    }
+	BlockingQueue<T> getQueue()
+	{
+		return queue;
+	}
 }

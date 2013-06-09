@@ -21,11 +21,11 @@ import org.apache.zookeeper.data.Stat;
 
 public interface Statable<T>
 {
-    /**
-     * Have the operation fill the provided stat object
-     *
-     * @param stat the stat to have filled in
-     * @return this
-     */
-    public T storingStatIn(Stat stat);
+	/**
+	 * Have the operation fill the provided stat object
+	 *
+	 * @param stat the stat to have filled in
+	 * @return this
+	 */
+	public T storingStatIn(Stat stat);
 }

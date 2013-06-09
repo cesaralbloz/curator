@@ -30,59 +30,59 @@ import java.util.List;
  */
 public interface CuratorEvent
 {
-    /**
-     * check here first - this value determines the type of event and which methods will have
-     * valid values
-     *
-     * @return event type
-     */
-    public CuratorEventType getType();
+	/**
+	 * check here first - this value determines the type of event and which methods will have
+	 * valid values
+	 *
+	 * @return event type
+	 */
+	public CuratorEventType getType();
 
-    /**
-     * @return "rc" from async callbacks
-     */
-    public int getResultCode();
+	/**
+	 * @return "rc" from async callbacks
+	 */
+	public int getResultCode();
 
-    /**
-     * @return the path
-     */
-    public String getPath();
+	/**
+	 * @return the path
+	 */
+	public String getPath();
 
-    /**
-     * @return the context object passed to {@link Backgroundable#inBackground(Object)}
-     */
-    public Object getContext();
+	/**
+	 * @return the context object passed to {@link Backgroundable#inBackground(Object)}
+	 */
+	public Object getContext();
 
-    /**
-     * @return any stat
-     */
-    public Stat getStat();
+	/**
+	 * @return any stat
+	 */
+	public Stat getStat();
 
-    /**
-     * @return any data
-     */
-    public byte[] getData();
+	/**
+	 * @return any data
+	 */
+	public byte[] getData();
 
-    /**
-     * @return any name
-     */
-    public String getName();
+	/**
+	 * @return any name
+	 */
+	public String getName();
 
-    /**
-     * @return any children
-     */
-    public List<String> getChildren();
+	/**
+	 * @return any children
+	 */
+	public List<String> getChildren();
 
-    /**
-     * @return any ACL list or null
-     */
-    public List<ACL> getACLList();
+	/**
+	 * @return any ACL list or null
+	 */
+	public List<ACL> getACLList();
 
-    /**
-     * If {@link #getType()} returns {@link CuratorEventType#WATCHED} this will
-     * return the WatchedEvent
-     *
-     * @return any WatchedEvent
-     */
-    public WatchedEvent getWatchedEvent();
+	/**
+	 * If {@link #getType()} returns {@link CuratorEventType#WATCHED} this will
+	 * return the WatchedEvent
+	 *
+	 * @return any WatchedEvent
+	 */
+	public WatchedEvent getWatchedEvent();
 }

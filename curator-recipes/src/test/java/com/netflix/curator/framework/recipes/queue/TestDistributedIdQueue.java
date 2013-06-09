@@ -30,95 +30,94 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter"})
 public class TestDistributedIdQueue extends BaseClassForTests
 {
-    private static final String     QUEUE_PATH = "/a/queue";
+	private static final String     QUEUE_PATH = "/a/queue";
 
-    private static final QueueSerializer<TestQueueItem>  serializer = new QueueItemSerializer();
+	private static final QueueSerializer<TestQueueItem>  serializer = new QueueItemSerializer();
 
-    @Test
-    public void testDeletingWithLock() throws Exception
-    {
-        DistributedIdQueue<TestQueueItem>  queue = null;
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            final CountDownLatch        consumingLatch = new CountDownLatch(1);
-            final CountDownLatch        waitLatch = new CountDownLatch(1);
-            QueueConsumer<TestQueueItem> consumer = new QueueConsumer<TestQueueItem>()
-            {
-                @Override
-                public void consumeMessage(TestQueueItem message) throws Exception
-                {
-                    consumingLatch.countDown();
-                    waitLatch.await();
-                }
+	@Test
+	public void testDeletingWithLock() throws Exception
+	{
+		DistributedIdQueue<TestQueueItem>  queue = null;
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			final CountDownLatch        consumingLatch = new CountDownLatch(1);
+			final CountDownLatch        waitLatch = new CountDownLatch(1);
+			QueueConsumer<TestQueueItem> consumer = new QueueConsumer<TestQueueItem>()
+					{
+				@Override
+				public void consumeMessage(TestQueueItem message) throws Exception
+				{
+					consumingLatch.countDown();
+					waitLatch.await();
+				}
 
-                @Override
-                public void stateChanged(CuratorFramework client, ConnectionState newState)
-                {
-                }
-            };
+				@Override
+				public void stateChanged(CuratorFramework client, ConnectionState newState)
+				{
+				}
+					};
 
-            queue = QueueBuilder.builder(client, consumer, serializer, QUEUE_PATH).lockPath("/locks").buildIdQueue();
-            queue.start();
+					queue = QueueBuilder.builder(client, consumer, serializer, QUEUE_PATH).lockPath("/locks").buildIdQueue();
+					queue.start();
 
-            queue.put(new TestQueueItem("test"), "id");
-            
-            Assert.assertTrue(consumingLatch.await(10, TimeUnit.SECONDS));  // wait until consumer has it
-            Assert.assertEquals(queue.remove("id"), 0);
+					queue.put(new TestQueueItem("test"), "id");
 
-            waitLatch.countDown();
-        }
-        finally
-        {
-            Closeables.closeQuietly(queue);
-            Closeables.closeQuietly(client);
-        }
-    }
+					Assert.assertTrue(consumingLatch.await(10, TimeUnit.SECONDS));  // wait until consumer has it
+					Assert.assertEquals(queue.remove("id"), 0);
 
-    @Test
-    public void testOrdering() throws Exception
-    {
-        final int                   ITEM_QTY = 100;
+					waitLatch.countDown();
+		}
+		finally
+		{
+			Closeables.closeQuietly(queue);
+			Closeables.closeQuietly(client);
+		}
+	}
 
-        DistributedIdQueue<TestQueueItem>  queue = null;
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        try
-        {
-            BlockingQueueConsumer<TestQueueItem> consumer = new BlockingQueueConsumer<TestQueueItem>(Mockito.mock(ConnectionStateListener.class));
+	@Test
+	public void testOrdering() throws Exception
+	{
+		final int                   ITEM_QTY = 100;
 
-            queue = QueueBuilder.builder(client, consumer, serializer, QUEUE_PATH).buildIdQueue();
-            queue.start();
-            
-            List<String>        ids = Lists.newArrayList();
-            for ( int i = 0; i < ITEM_QTY; ++i )
-            {
-                String  id = Double.toString(Math.random());
-                ids.add(id);
-                queue.put(new TestQueueItem(id), id);
-            }
+		DistributedIdQueue<TestQueueItem>  queue = null;
+		CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
+		client.start();
+		try
+		{
+			BlockingQueueConsumer<TestQueueItem> consumer = new BlockingQueueConsumer<TestQueueItem>(Mockito.mock(ConnectionStateListener.class));
 
-            int                 iteration = 0;
-            while ( consumer.size() < ITEM_QTY )
-            {
-                Assert.assertTrue(++iteration < ITEM_QTY);
-                Thread.sleep(1000);
-            }
+			queue = QueueBuilder.builder(client, consumer, serializer, QUEUE_PATH).buildIdQueue();
+			queue.start();
 
-            int                 i = 0;
-            for ( TestQueueItem item : consumer.getItems() )
-            {
-                Assert.assertEquals(item.str, ids.get(i++));
-            }
-        }
-        finally
-        {
-            Closeables.closeQuietly(queue);
-            Closeables.closeQuietly(client);
-        }
-    }
+			List<String>        ids = Lists.newArrayList();
+			for ( int i = 0; i < ITEM_QTY; ++i )
+			{
+				String  id = Double.toString(Math.random());
+				ids.add(id);
+				queue.put(new TestQueueItem(id), id);
+			}
+
+			int                 iteration = 0;
+			while ( consumer.size() < ITEM_QTY )
+			{
+				Assert.assertTrue(++iteration < ITEM_QTY);
+				Thread.sleep(1000);
+			}
+
+			int                 i = 0;
+			for ( TestQueueItem item : consumer.getItems() )
+			{
+				Assert.assertEquals(item.str, ids.get(i++));
+			}
+		}
+		finally
+		{
+			Closeables.closeQuietly(queue);
+			Closeables.closeQuietly(client);
+		}
+	}
 }

@@ -23,12 +23,12 @@ import com.netflix.curator.framework.state.ConnectionStateListener;
  */
 public interface SharedCountListener extends ConnectionStateListener
 {
-    /**
-     * Called when the shared value has changed
-     *
-     * @param sharedCount the shared count instance
-     * @param newCount the new count
-     * @throws Exception errors
-     */
-    public void         countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception;
+	/**
+	 * Called when the shared value has changed
+	 *
+	 * @param sharedCount the shared count instance
+	 * @param newCount the new count
+	 * @throws Exception errors
+	 */
+	public void         countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception;
 }

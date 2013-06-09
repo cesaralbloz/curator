@@ -24,12 +24,12 @@ import com.netflix.curator.framework.CuratorFramework;
  */
 public interface CuratorListener
 {
-    /**
-     * Called when a background task has completed or a watch has triggered
-     *
-     * @param client client
-     * @param event the event
-     * @throws Exception any errors
-     */
-    public void         eventReceived(CuratorFramework client, CuratorEvent event) throws Exception;
+	/**
+	 * Called when a background task has completed or a watch has triggered
+	 *
+	 * @param client client
+	 * @param event the event
+	 * @throws Exception any errors
+	 */
+	public void         eventReceived(CuratorFramework client, CuratorEvent event) throws Exception;
 }

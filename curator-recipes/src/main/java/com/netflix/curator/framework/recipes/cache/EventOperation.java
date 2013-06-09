@@ -18,26 +18,26 @@ package com.netflix.curator.framework.recipes.cache;
 
 class EventOperation implements Operation
 {
-    private final PathChildrenCache cache;
-    private final PathChildrenCacheEvent event;
+	private final PathChildrenCache cache;
+	private final PathChildrenCacheEvent event;
 
-    EventOperation(PathChildrenCache cache, PathChildrenCacheEvent event)
-    {
-        this.cache = cache;
-        this.event = event;
-    }
+	EventOperation(PathChildrenCache cache, PathChildrenCacheEvent event)
+	{
+		this.cache = cache;
+		this.event = event;
+	}
 
-    @Override
-    public void invoke()
-    {
-        cache.callListeners(event);
-    }
+	@Override
+	public void invoke()
+	{
+		cache.callListeners(event);
+	}
 
-    @Override
-    public String toString()
-    {
-        return "EventOperation{" +
-            "event=" + event +
-            '}';
-    }
+	@Override
+	public String toString()
+	{
+		return "EventOperation{" +
+				"event=" + event +
+				'}';
+	}
 }
