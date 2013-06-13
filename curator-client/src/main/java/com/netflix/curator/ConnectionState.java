@@ -229,7 +229,8 @@ class ConnectionState implements Watcher, Closeable
 			// NOP
 			break;
 		}
-		}
+		
+        }
 
 		if ( checkNewConnectionString && zooKeeper.hasNewConnectionString() )
 		{
