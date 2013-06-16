@@ -15,21 +15,25 @@
  */
 package org.I0Itec.zkclient;
 
-import com.netflix.curator.test.TestingServer;
-import org.I0Itec.zkclient.testutil.ZkTestSystem;
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import org.I0Itec.zkclient.testutil.ZkTestSystem;
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.netflix.curator.test.TestingServer;
 
 public abstract class AbstractBaseZkClientTest {
 

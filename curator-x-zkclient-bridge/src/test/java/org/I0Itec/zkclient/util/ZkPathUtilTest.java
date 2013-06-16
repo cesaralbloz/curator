@@ -15,14 +15,13 @@
  */
 package org.I0Itec.zkclient.util;
 
-import com.netflix.curator.test.TestingServer;
 import junit.framework.TestCase;
 
-import org.I0Itec.zkclient.TestUtil;
 import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkServer;
 import org.I0Itec.zkclient.testutil.ZkPathUtil;
 import org.I0Itec.zkclient.testutil.ZkTestSystem;
+
+import com.netflix.curator.test.TestingServer;
 
 public class ZkPathUtilTest extends TestCase {
 

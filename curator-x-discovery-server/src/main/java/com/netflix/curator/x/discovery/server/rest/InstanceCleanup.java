@@ -48,7 +48,8 @@ public class InstanceCleanup implements Closeable
      * @param discovery the service being monitored
      * @param instanceRefreshMs time in milliseconds to consider a registration stale
      */
-    public InstanceCleanup(ServiceDiscovery<?> discovery, int instanceRefreshMs)
+    @SuppressWarnings("unchecked")
+	public InstanceCleanup(ServiceDiscovery<?> discovery, int instanceRefreshMs)
     {
         //noinspection unchecked
         this.discovery = (ServiceDiscovery<Object>)discovery;   // this cast is safe - this class never accesses the payload

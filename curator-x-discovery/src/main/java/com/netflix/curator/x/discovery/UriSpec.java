@@ -114,7 +114,6 @@ public class UriSpec implements Iterable<UriSpec.Part>
             return variable;
         }
 
-        @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o)
         {
@@ -311,7 +310,6 @@ public class UriSpec implements Iterable<UriSpec.Part>
         parts.remove(part);
     }
 
-    @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object o)
     {

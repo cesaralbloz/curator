@@ -154,8 +154,8 @@ public class ServiceInstance<T>
         return (uriSpec != null) ? uriSpec.build(this, variables) : "";
     }
 
-    @SuppressWarnings("RedundantIfStatement")
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public boolean equals(Object o)
     {
         if ( this == o )
@@ -167,7 +167,7 @@ public class ServiceInstance<T>
             return false;
         }
 
-        ServiceInstance that = (ServiceInstance)o;
+        ServiceInstance<T> that = (ServiceInstance<T>)o;
 
         if ( registrationTimeUTC != that.registrationTimeUTC )
         {

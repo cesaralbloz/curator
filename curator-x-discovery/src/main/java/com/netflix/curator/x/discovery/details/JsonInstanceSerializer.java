@@ -47,7 +47,7 @@ public class JsonInstanceSerializer<T> implements InstanceSerializer<T>
     @Override
     public ServiceInstance<T> deserialize(byte[] bytes) throws Exception
     {
-        ServiceInstance rawServiceInstance = mapper.readValue(bytes, type);
+        ServiceInstance<?> rawServiceInstance = mapper.readValue(bytes, type);
         payloadClass.cast(rawServiceInstance.getPayload()); // just to verify that it's the correct type
         return (ServiceInstance<T>)rawServiceInstance;
     }

@@ -15,15 +15,9 @@
  */
 package org.I0Itec.zkclient;
 
-import static org.mockito.Mockito.mock;
-
-import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import com.netflix.curator.test.TestingServer;
-import org.apache.commons.io.FileUtils;
 import org.mockito.exceptions.base.MockitoAssertionError;
 
 public class TestUtil {

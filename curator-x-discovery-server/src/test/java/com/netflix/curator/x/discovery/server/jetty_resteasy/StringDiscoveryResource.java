@@ -34,7 +34,8 @@ public class StringDiscoveryResource extends DiscoveryResource<String>
         super(getContextFromProvider(providers));
     }
 
-    private static DiscoveryContext<String> getContextFromProvider(Providers providers)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	private static DiscoveryContext<String> getContextFromProvider(Providers providers)
     {
         ContextResolver<DiscoveryContext> contextResolver = providers.getContextResolver(DiscoveryContext.class, MediaType.WILDCARD_TYPE);
         //noinspection unchecked
